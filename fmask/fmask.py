@@ -20,14 +20,6 @@ numbers are also from the paper.
 Input is a radiance file (the da1 file, in our terms), and outputs
 are cloud, cloud shadow and snow mask files. 
 
-This script has been adapted to work with Landsat-8, by the simple expediant
-of using the corresponding bands as though they were the same. This is, of course, untrue,
-but we assuming it is true until further notice. The Landsat-8 input file
-has an extra band at the beginning, so we fudge the global variables used for the 
-layer index numbers for the Landsat-8 case, and then continue to refer to the bands
-by their "old" names. A proper re-tuning would require an appropriate 
-training dataset of Landsat-8 OLI data, and so will have to wait. 
-
 Taken from Neil Flood's implementation by permission.
 """
 # This file is part of 'python-fmask' - a cloud masking module
@@ -46,10 +38,13 @@ Taken from Neil Flood's implementation by permission.
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+from __future__ import print_function, division
+
 import sys
 import os
+import abc
 import subprocess
-import json
+import tempfile
 
 import numpy
 numpy.seterr(all='raise')
@@ -97,6 +92,8 @@ class FmaskException(Exception):
 class FmaskParameterError(FmaskException):
     "Something is wrong with a parameter"
 
+class InfileError(FmaskException): pass
+
 def setDefaultDriver():
     """
     Sets some default values into global variables, defining
@@ -114,12 +111,22 @@ def setDefaultDriver():
     
     If not otherwise supplied, the default is to use the HFA driver, with compression. 
     """                                                            
-    global DEFAULTDRIVERNAME, DEFAULTCREATIONOPTIONS
+    global DEFAULTDRIVERNAME, DEFAULTCREATIONOPTIONS, DEFAULTEXTENSION
     DEFAULTDRIVERNAME = os.getenv('FMASK_DFLT_DRIVER', default='HFA')
     DEFAULTCREATIONOPTIONS = ['COMPRESSED=TRUE','IGNOREUTM=TRUE']
     creationOptionsStr = os.getenv('FMASK_DFLT_DRIVEROPTIONS')
     if creationOptionsStr is not None:
         DEFAULTCREATIONOPTIONS = creationOptionsStr.split()
+        
+    driver = gdal.GetDriverByName(DEFAULTDRIVERNAME)
+    if driver is None:
+        msg = 'Cannot find GDAL driver %s' % DEFAULTDRIVERNAME
+        raise FmaskParameterError(msg)
+        
+    DEFAULTEXTENSION = '.tmp'
+    drivermeta = driver.GetMetadata()
+    if gdal.DMD_EXTENSION in drivermeta:
+        DEFAULTEXTENSION = '.' + drivermeta[gdal.DMD_EXTENSION]
         
 setDefaultDriver()
 
@@ -135,18 +142,187 @@ class ThermalFileInfo(object):
     thermalOffset1040um = None
     thermalK1_1040um = None
     thermalK2_1040um = None
+
+    def scaleThermalDNtoC(self, scaledBT):
+        """
+        Use the given params to unscale the thermal, and then 
+        convert it from K to C. Return a single 2-d array of the 
+        temperature in deg C. 
+        """
+        KELVIN_ZERO_DEGC = scipy.constants.zero_Celsius
+        rad = (scaledBT[self.thermalBand1040um].astype(float) * 
+                    self.thermalGain1040um + self.thermalOffset1040um)
+        # see http://www.yale.edu/ceo/Documentation/Landsat_DN_to_Kelvin.pdf
+        # and https://landsat.usgs.gov/Landsat8_Using_Product.php
+        rad[rad <= 0] = 0.00001 # to stop errors below
+        temp = self.thermalK2_1040um / numpy.log(self.thermalK1_1040um / rad + 1.0)
+        bt = temp - KELVIN_ZERO_DEGC
+        return bt
     
 class AnglesInfo(object):
     """
-    Contains view and solar angle information for file (in radians).
+    Abstract base class that Contains view and solar angle 
+    information for file (in radians).
     
-    Can be either scalars or paths to file with the information
     """
-    # TODO: way of reading in for different sensors.
-    solarZenithAngle = None
-    solarAzimuthAngle = None
-    viewZenithAngle = None
-    viewAzimuthAngle = None
+    __metaclass__ = abc.ABCMeta
+    
+    def prepareForQuerying(self):
+        """
+        Called when fmask is about to query this object for angles.
+        Derived class should do any reading of files into memory required here.
+        """
+        
+    def releaseMemory(self):
+        """
+        Called when fmask has finished querying this object.
+        Can release any allocated memory.
+        """
+    
+    @abc.abstractmethod
+    def getSolarZenithAngle(self, indices):
+        """
+        Return the average solar zenith angle for the given indices
+        """
+
+    @abc.abstractmethod
+    def getSolarAzimuthAngle(self, indices):
+        """
+        Return the average solar azimuth angle for the given indices
+        """
+    
+    @abc.abstractmethod
+    def getViewZenithAngle(self, indices):
+        """
+        Return the average view zenith angle for the given indices
+        """
+
+    @abc.abstractmethod
+    def getViewAzimuthAngle(self, indices):
+        """
+        Return the average view azimuth angle for the given indices
+        """
+    
+class AnglesFileInfo(AnglesInfo):
+    """
+    An implementation of AnglesInfo that reads the information from
+    GDAL supported files.
+    """
+    def __init__(self, solarZenithFilename, solarZenithBand, solarAzimuthFilename,
+            solarAzimuthBand, viewZenithFilename, viewZenithBand, 
+            viewAzimuthFilename, viewAzimuthBand):
+        """
+        Initialises the object with the names and band numbers of the angles.
+        band numbers should be 0 based - ie first band is 0.
+        """
+        self.solarZenithFilename = solarZenithFilename
+        self.solarZenithBand = solarZenithBand
+        self.solarAzimuthFilename = solarAzimuthFilename
+        self.solarAzimuthBand = solarAzimuthBand
+        self.viewZenithFilename = viewZenithFilename
+        self.viewZenithBand = viewZenithBand
+        self.viewAzimuthFilename = viewAzimuthFilename
+        self.viewAzimuthBand = viewAzimuthBand
+        # these will contain the actual image data once read
+        # by prepareForQuerying()
+        self.solarZenithData = None
+        self.solarAzimuthData = None
+        self.viewZenithData = None
+        self.viewAzimuthData = None
+    
+    @staticmethod
+    def readData(filename, bandNum):
+        ds = gdal.Open(filename)
+        band = ds.GetRasterBand(bandNum + 1)
+        data = band.ReadAsArray()
+        del ds
+        return data
+    
+    def prepareForQuerying(self):
+        """
+        Called when fmask is about to query this object for angles.
+        """
+        self.solarZenithData = self.readData(self.solarZenithFilename, 
+                                self.solarZenithFilename)
+        self.solarAzimuthData = self.readData(self.solarAzimuthFilename, 
+                                self.solarAzimuthFilename)
+        self.viewZenithData = self.readData(self.viewZenithFilename, 
+                                self.viewZenithFilename)
+        self.viewAzimuthData = self.readData(self.viewAzimuthFilename, 
+                                self.viewAzimuthFilename)
+        
+    def releaseMemory(self):
+        """
+        Called when fmask has finished querying this object.
+        """
+        del self.solarZenithData
+        del self.solarAzimuthData
+        del self.viewZenithData
+        del self.viewAzimuthData
+    
+    def getSolarZenithAngle(self, indices):
+        """
+        Return the average solar zenith angle for the given indices
+        """
+        return self.solarZenithData[indices].mean()
+
+    def getSolarAzimuthAngle(self, indices):
+        """
+        Return the average solar azimuth angle for the given indices
+        """
+        return self.solarAzimuthData[indices].mean()
+    
+    def getViewZenithAngle(self, indices):
+        """
+        Return the average view zenith angle for the given indices
+        """
+        return self.viewZenithData[indices].mean()
+
+    def getViewAzimuthAngle(self, indices):
+        """
+        Return the average view azimuth angle for the given indices
+        """
+        return self.viewAzimuthData[indices].mean()
+
+class AngleConstantInfo(AnglesInfo):
+    """
+    An implementation of AnglesInfo that uses constant
+    angles accross the scene. 
+    """
+    def __init__(self, solarZenithAngle, solarAzimuthAngle, viewZenithAngle,
+                    viewAzimuthAngle):
+        self.solarZenithAngle = solarZenithAngle
+        self.solarAzimuthAngle = solarAzimuthAngle
+        self.viewZenithAngle = viewZenithAngle
+        self.viewAzimuthAngle = viewAzimuthAngle
+
+    def getSolarZenithAngle(self, indices):
+        """
+        Return the solar zenith angle
+        """
+        return self.solarZenithAngle
+
+    def getSolarAzimuthAngle(self, indices):
+        """
+        Return the solar azimuth angle
+        """
+        return self.solarAzimuthAngle
+    
+    def getViewZenithAngle(self, indices):
+        """
+        Return the view zenith angle
+        """
+        return self.viewZenithAngle
+
+    def getViewAzimuthAngle(self, indices):
+        """
+        Return the view azimuth angle
+        """
+        return self.viewAzimuthAngle
+
+# TODO: way of reading in for different sensors.
+def readAnglesFromLandsatMTL(mtlfile):
+    raise NotImplementedError()
     
     
 def doFmask(radianceFile, radianceBands, toaRefFile, anglesInfo, outMask, 
@@ -182,6 +358,14 @@ def doFmask(radianceFile, radianceBands, toaRefFile, anglesInfo, outMask,
         msg = 'Must provide input radianceFile and radianceBands'
         raise FmaskParameterError(msg)
         
+    if toaRefFile is None:
+        msg = 'Must provide input toaRefFile'
+        raise FmaskParameterError(msg)
+        
+    if anglesInfo is None:
+        msg = 'Must provide input anglesInfo'
+        raise FmaskParameterError(msg)
+        
     if outMask is None:
         msg = 'Output filename must be provided'
         raise FmaskParameterError(msg)
@@ -192,37 +376,36 @@ def doFmask(radianceFile, radianceBands, toaRefFile, anglesInfo, outMask,
         nosaturationtest = True
     
     if verbose: print("Cloud layer, pass 1")
-    (pass1file, Twater, Tlow, Thigh, b4_17) = doPotentialCloudFirstPass(cmdargs.radiancefile, 
-        toareffile, thermalfile, cmdargs, mtlfile)
+    (pass1file, Twater, Tlow, Thigh, b4_17) = doPotentialCloudFirstPass(radiancefile, 
+        radianceBands, toaRefFile, thermalFile, thermalInfo, nosaturationtest, tempdir)
  
     if verbose: print("Cloud layer, pass 2")
-    (pass2file, landThreshold) = doPotentialCloudSecondPass(toareffile, thermalfile, pass1file, 
-        Twater, Tlow, Thigh, mtlfile)
+    (pass2file, landThreshold) = doPotentialCloudSecondPass(toaRefFile, radianceBands, 
+        thermalFile, thermalInfo, pass1file, Twater, Tlow, Thigh, tempdir)
 
     if verbose: print("Cloud layer, pass 3")
-    interimCloudmask = doCloudLayerFinalPass(thermalfile, pass1file, pass2file, 
-        landThreshold, Tlow, mtlfile)
+    interimCloudmask = doCloudLayerFinalPass(thermalFile, thermalInfo, pass1file, 
+        pass2file, landThreshold, Tlow, tempdir)
         
     if verbose: print("Potential shadows")
-    potentialShadowsFile = doPotentialShadows(toareffile, b4_17)
+    potentialShadowsFile = doPotentialShadows(toaRefFile, radianceBands, b4_17, tempdir)
     
     if verbose: print("Clumping clouds")
     (clumps, numClumps) = clumpClouds(interimCloudmask)
     
     if verbose: print("Making 3d clouds")
     (cloudShape, cloudBaseTemp, cloudClumpNdx) = make3Dclouds(clumps, numClumps, 
-        mtlfile, thermalfile, toareffile)
+        thermalFile, thermalInfo, toaRefFile, radianceBands)
     
     if verbose: print("Making cloud shadow shapes")
-    shadowShapesDict = makeCloudShadowShapes(toareffile, cloudShape, cloudClumpNdx, anglesfile)
+    shadowShapesDict = makeCloudShadowShapes(toaRefFile, radianceBands, cloudShape, 
+        cloudClumpNdx, anglesInfo)
     
     if verbose: print("Matching shadows")
     interimShadowmask = matchShadows(interimCloudmask, potentialShadowsFile, shadowShapesDict, 
-        cloudBaseTemp, Tlow, Thigh, cmdargs, pass1file)
+        cloudBaseTemp, Tlow, Thigh, cmdargs, pass1file, shadowbuffersize)
     
-    finalizeAll(interimCloudmask, interimShadowmask, pass1file, outfile, cmdargs)
-    
-    addHistory(outfile, cmdargs, thermalfile)
+    finalizeAll(interimCloudmask, interimShadowmask, pass1file, outfile, cloudbuffersize)
     
     # Remove temporary files
     if not cmdargs.keepintermediates:
@@ -230,7 +413,7 @@ def doFmask(radianceFile, radianceBands, toaRefFile, anglesInfo, outMask,
                 interimShadowmask, toareffile]:
             os.remove(filename)
 
-    print('finished fmask.py')
+    if verbose: print('finished fmask')
 
 def getFiles(cmdargs):
     """
@@ -313,36 +496,20 @@ def getThermalGainAndOffset(mtl, thermalFile):
 
     return gain, offset, k1, k2
 
-def calcToaRef(radiancefile, anglesfile, calfile, tempDir, verbose):
-    """
-    Use toareflectance.py to calculate top-of-atmosphere reflectance
-    """
-    toareffile = lcrfs.change(radiancefile, 'stage', 'toar')
-    toareffile = os.path.join(tempDir, os.path.basename(toareffile))
-    if not os.path.exists(toareffile):
-        if verbose: print("Calculating TOA reflectance")
-        cmdList = ['landsat_toa_refl.py', '-i', radiancefile, '-a',
-            anglesfile, '-c', calfile, '-o', toareffile]
-        if lcrfs.lcrfs('satellite', radiancefile) == 'landsat8':
-            cmdList.append('-l')
-        proc = subprocess.Popen(cmdList)
-        proc.communicate()
-    
-    return toareffile
-
-
 # An offset so we can scale BT(deg C) to the range 0-255, for use in histograms. 
 BT_OFFSET = 176
 BT_HISTSIZE = 256
 BYTE_MIN = 0
 BYTE_MAX = 255
 # Gain to scale b4 reflectances to 0-255 for histograms
+# TODO: check this ok for Sentinel
 B4_SCALE = 500.0
 
 # Global RIOS window size
 RIOS_WINDOW_SIZE = 512
 
-def doPotentialCloudFirstPass(radiancefile, toareffile, thermalfile, cmdargs, mtlfile):
+def doPotentialCloudFirstPass(radiancefile, radianceBands, toaRefFile, 
+                thermalFile, thermalInfo, nosaturationtest, tempdir):
     """
     Run the first pass of the potential cloud layer. Also
     finds the temperature thresholds which will be needed 
@@ -354,23 +521,26 @@ def doPotentialCloudFirstPass(radiancefile, toareffile, thermalfile, cmdargs, mt
     otherargs = applier.OtherInputs()
     controls = applier.ApplierControls()
     
+    # TODO: handle no thermal
     infiles.radiance = radiancefile
     infiles.toaref = toareffile
     infiles.thermal = thermalfile
-    outfiles.pass1 = lcrfs.change(toareffile, 'stage', 'pass1')
+    (fd, outfiles.pass1) = tempfile.mkstemp(prefix='pass1', dir=tempdir, 
+                                suffix=DEFAULTEXTENSION)
+    os.close(fd)
     controls.setWindowXsize(RIOS_WINDOW_SIZE)
     controls.setWindowYsize(RIOS_WINDOW_SIZE)
     controls.setReferenceImage(toareffile)
     controls.setCalcStats(False)
-    
-    thgain, thoffset, k1, k2 = getThermalGainAndOffset(mtlfile, thermalfile)
-    otherargs.thgain = thgain
-    otherargs.thoffset = thoffset
-    otherargs.k1, otherargs.k2 = k1, k2
+    controls.setOutputDriverName(DEFAULTDRIVERNAME)
+    controls.setCreationOptions(DEFAULTCREATIONOPTIONS)
+
+    otherargs.radianceBands = radianceBands    
+    otherargs.thermalInfo = thermalInfo
     otherargs.waterBT_hist = numpy.zeros(BT_HISTSIZE, dtype=numpy.uint32)
     otherargs.clearLandBT_hist = numpy.zeros(BT_HISTSIZE, dtype=numpy.uint32)
     otherargs.clearLandB4_hist = numpy.zeros(BT_HISTSIZE, dtype=numpy.uint32)
-    otherargs.saturationtest = not cmdargs.nosaturationtest
+    otherargs.saturationtest = not nosaturationtest
 
     applier.apply(potentialCloudFirstPass, infiles, outfiles, otherargs, controls=controls)
     
@@ -387,11 +557,6 @@ def doPotentialCloudFirstPass(radiancefile, toareffile, thermalfile, cmdargs, mt
     return (outfiles.pass1, Twater, Tlow, Thigh, b4_17)
 
 
-# Band Index numbers. These are the array index values for each TM band number
-(TM1, TM2, TM3, TM4, TM5, TM7) = (0, 1, 2, 3, 4, 5)
-# Similarly, the layer numbers (GDAL, starting at 1) for TM bands. 
-TM4_lyr = 4
-
 def potentialCloudFirstPass(info, inputs, outputs, otherargs):
     """
     Called from RIOS. 
@@ -403,24 +568,31 @@ def potentialCloudFirstPass(info, inputs, outputs, otherargs):
     # Clamp off any reflectance <= 0
     ref[ref<=0] = 0.00001
     # Brightness temperature in degrees C
-    bt = scaleThermalDNtoC(inputs.thermal, otherargs.thgain, otherargs.thoffset,
-            otherargs.k1, otherargs.k2)
+    bt = otherargs.thermalInfo.scaleThermalDNtoC(inputs.thermal)
+
+    # Extract the bands we need - expressed as Landsat Bands since
+    # this is how the original paper was.
+    TM1 = otherinputs.radianceInfo[VIS_BAND_045um]
+    TM2 = otherinputs.radianceInfo[VIS_BAND_052um]
+    TM3 = otherinputs.radianceInfo[VIS_BAND_063um]
+    TM4 = otherinputs.radianceInfo[VIS_BAND_076um]
+    TM5 = otherinputs.radianceInfo[VIS_BAND_155um]
+    TM7 = otherinputs.radianceInfo[VIS_BAND_208um]
+    THERM = otherargs.thermalInfo.thermalBand1040um
     
     radNull = info.getNoDataValueFor(inputs.radiance)
     thermalNull = info.getNoDataValueFor(inputs.thermal)
-    nullmask = ((inputs.radiance[TM1] == radNull) | (inputs.thermal[0] == thermalNull))
+    nullmask = ((inputs.radiance[TM1] == radNull) | (inputs.thermal[THERM] == thermalNull))
     # Special mask needed only for resets in final pass
     refNullmask = (inputs.radiance[TM1] == radNull)
-    thermNullmask = (inputs.thermal[0] == thermalNull)
+    thermNullmask = (inputs.thermal[THERM] == thermalNull)
     
     imgshape = bt.shape
     
     # Equation 1
     ndsi = (ref[TM2] - ref[TM5]) / (ref[TM2] + ref[TM5])
     ndvi = (ref[TM4] - ref[TM3]) / (ref[TM4] + ref[TM3])
-    basicTest = mdl.and_list([
-        ref[TM7] > 0.03, bt < 27, ndsi < 0.8, ndvi < 0.8
-    ])
+    basicTest = (ref[TM7] > 0.03) & (bt < 27) & (ndsi < 0.8) & (ndvi < 0.8)
     
     # Equation 2
     meanVis = (ref[TM1] + ref[TM2] + ref[TM3]) / 3.0
@@ -443,16 +615,14 @@ def potentialCloudFirstPass(info, inputs, outputs, otherargs):
     waterTest[nullmask] = False
     
     # Equation 6. Potential cloud pixels (first pass)
-    pcp = mdl.and_list([
-        basicTest, whitenessTest, hazeTest, b45test
-    ])
+    pcp = basicTest & whitenessTest & hazeTest & b45test
     
     # This is an extra saturation test added by DERM, and is not part of the Fmask algorithm. 
     # However, some cloud centres are saturated,and thus fail the whiteness and haze tests
     if otherargs.saturationtest:
-        saturatedVis = mdl.or_list([(inputs.radiance[n] == 255) for n in [TM1, TM2, TM3]])
+        saturatedVis = reduce(numpy.logical_or, [(inputs.radiance[n] == 255) for n in [TM1, TM2, TM3]])
         veryBright = (meanVis > 0.45)
-        saturatedAndBright = numpy.logical_and(saturatedVis, veryBright)
+        saturatedAndBright = saturatedVis & veryBright
         pcp[saturatedAndBright] = True
         whiteness[saturatedAndBright] = 0
     
@@ -482,9 +652,7 @@ def potentialCloudFirstPass(info, inputs, outputs, otherargs):
     variabilityProbPcnt = variabilityProbPcnt.clip(BYTE_MIN, BYTE_MAX).astype(numpy.uint8)
     
     # Equation 20
-    snowmask = mdl.and_list([
-        ndsi > 0.15, bt < 3.8, ref[TM4] > 0.11, ref[TM2] > 0.1
-    ])
+    snowmask = (ndsi > 0.15) & (bt < 3.8) & (ref[TM4] > 0.11) & (ref[TM2] > 0.1)
     snowmask[nullmask] = False
     
     # Output the pcp and water test layers. 
@@ -548,7 +716,8 @@ def calcBTthresholds(otherargs):
 # For scaling probability values so I can store them in 8 bits
 PROB_SCALE = 100.0
 
-def doPotentialCloudSecondPass(toareffile, thermalfile, pass1file, Twater, Tlow, Thigh, mtlfile):
+def doPotentialCloudSecondPass(toareffile, radianceBands, thermalfile, 
+        thermalInfo, pass1file, Twater, Tlow, Thigh, tempdir):
     """
     Second pass for potential cloud layer
     """
@@ -560,11 +729,11 @@ def doPotentialCloudSecondPass(toareffile, thermalfile, pass1file, Twater, Tlow,
     infiles.pass1 = pass1file
     infiles.toaref = toareffile
     infiles.thermal = thermalfile
-    outfiles.pass2 = lcrfs.change(toareffile, 'stage', 'pass2')
-    thgain, thoffset, k1, k2 = getThermalGainAndOffset(mtlfile, thermalfile)
-    otherargs.thgain = thgain
-    otherargs.thoffset = thoffset
-    otherargs.k1, otherargs.k2 = k1, k2
+    (fd, outfiles.pass2) = tempfile.mkstemp(prefix='pass2', dir=tempdir, 
+                                suffix=DEFAULTEXTENSION)
+    os.close(fd)
+    otherargs.radianceBands = radianceBands
+    otherargs.thermalInfo = thermalInfo
     
     otherargs.Twater = Twater
     otherargs.Tlow = Tlow
@@ -575,6 +744,8 @@ def doPotentialCloudSecondPass(toareffile, thermalfile, pass1file, Twater, Tlow,
     controls.setWindowYsize(RIOS_WINDOW_SIZE)
     controls.setReferenceImage(toareffile)
     controls.setCalcStats(False)
+    controls.setOutputDriverName(DEFAULTDRIVERNAME)
+    controls.setCreationOptions(DEFAULTCREATIONOPTIONS)
     
     applier.apply(potentialCloudSecondPass, infiles, outfiles, otherargs, controls=controls)
     
@@ -597,8 +768,7 @@ def potentialCloudSecondPass(info, inputs, outputs, otherargs):
     # Clamp off any reflectance <= 0
     ref[ref<=0] = 0.00001
     # Brightness temperature in degrees C
-    bt = scaleThermalDNtoC(inputs.thermal, otherargs.thgain, otherargs.thoffset,
-            otherargs.k1, otherargs.k2)
+    bt = otherargs.thermalInfo.scaleThermalDNtoC(inputs.thermal)
     Twater = otherargs.Twater
     (Tlow, Thigh) = (otherargs.Tlow, otherargs.Thigh)
     # Values from first pass
@@ -613,6 +783,7 @@ def potentialCloudSecondPass(info, inputs, outputs, otherargs):
         # There is no water, so who cares. 
         wTemperature_prob = 1
     
+    TM5 = otherinputs.radianceInfo[VIS_BAND_155um]
     # Equation 10
     brightness_prob = numpy.minimum(ref[TM5], 0.11) / 0.11
     
@@ -639,7 +810,8 @@ def potentialCloudSecondPass(info, inputs, outputs, otherargs):
     otherargs.lCloudProb_hist = accumHist(otherargs.lCloudProb_hist, scaledProb[clearLand])
 
 
-def doCloudLayerFinalPass(thermalfile, pass1file, pass2file, landThreshold, Tlow, mtlfile):
+def doCloudLayerFinalPass(thermalfile, thermalInfo, pass1file, pass2file, 
+                    landThreshold, Tlow, tempdir):
     """
     Final pass
     """
@@ -653,11 +825,11 @@ def doCloudLayerFinalPass(thermalfile, pass1file, pass2file, landThreshold, Tlow
     infiles.thermal = thermalfile
     otherargs.landThreshold = landThreshold
     otherargs.Tlow = Tlow
-    thgain, thoffset, k1, k2 = getThermalGainAndOffset(mtlfile, thermalfile)
-    otherargs.k1, otherargs.k2 = k1, k2
-    otherargs.thgain = thgain
-    otherargs.thoffset = thoffset
-    outfiles.cloudmask = lcrfs.change(pass1file, 'stage', 'interimcloud')
+    otherargs.thermalInfo = thermalInfo
+
+    (fd, outfiles.cloudmask) = tempfile.mkstemp(prefix='interimcloud', dir=tempdir, 
+                                suffix=DEFAULTEXTENSION)
+    os.close(fd)
     # Need overlap so we can do Fmask's 3x3 fill-in
     overlap = 1
         
@@ -666,6 +838,8 @@ def doCloudLayerFinalPass(thermalfile, pass1file, pass2file, landThreshold, Tlow
     controls.setWindowYsize(RIOS_WINDOW_SIZE)
     controls.setReferenceImage(pass1file)
     controls.setCalcStats(False)
+    controls.setOutputDriverName(DEFAULTDRIVERNAME)
+    controls.setCreationOptions(DEFAULTCREATIONOPTIONS)
     
     applier.apply(cloudFinalPass, infiles, outfiles, otherargs, controls=controls)
     
@@ -686,14 +860,13 @@ def cloudFinalPass(info, inputs, outputs, otherargs):
     wCloud_prob = inputs.pass2[0] / PROB_SCALE
     lCloud_prob = inputs.pass2[1] / PROB_SCALE
     # Brightness temperature in degrees C
-    bt = scaleThermalDNtoC(inputs.thermal, otherargs.thgain, otherargs.thoffset,
-            otherargs.k1, otherargs.k2)
+    bt = otherargs.thermalInfo.scaleThermalDNtoC(inputs.thermal)
     landThreshold = otherargs.landThreshold
     Tlow = otherargs.Tlow
     
-    cloudmask1 = mdl.and_list([pcp, waterTest, wCloud_prob>0.5])
-    cloudmask2 = mdl.and_list([pcp, notWater, lCloud_prob>landThreshold])
-    cloudmask3 = mdl.and_list([lCloud_prob > 0.99, notWater])
+    cloudmask1 = pcp & waterTest & (wCloud_prob>0.5)
+    cloudmask2 = pcp & notWater & (lCloud_prob>landThreshold)
+    cloudmask3 = (lCloud_prob > 0.99) & notWater
     if Tlow is not None:
         cloudmask4 = (bt < (Tlow-35))
     else:
@@ -701,7 +874,7 @@ def cloudFinalPass(info, inputs, outputs, otherargs):
         cloudmask4 = True
         
     # Equation 18
-    cloudmask = mdl.or_list([cloudmask1, cloudmask2, cloudmask3, cloudmask4])
+    cloudmask = cloudmask1 | cloudmask2 | cloudmask3 | cloudmask4
     cloudmask[nullmask] = 0
 
     # Apply the prescribed 3x3 buffer. According to Zhu&Woodcock (page 87, end of section 3.1.2) 
@@ -713,11 +886,16 @@ def cloudFinalPass(info, inputs, outputs, otherargs):
     
     outputs.cloudmask = numpy.array([bufferedCloudmask])
 
-def doPotentialShadows(toareffile, b4_17):
+def doPotentialShadows(toareffile, radianceBands, b4_17, tempdir):
     """
     Make potential shadow layer, as per section 3.1.3 of Zhu&Woodcock. 
     """
-    potentialShadowsFile = lcrfs.change(toareffile, 'stage', 'shadows')
+    (fd, potentialShadowsFile) = tempfile.mkstemp(prefix='shadows', dir=tempdir, 
+                                suffix=DEFAULTEXTENSION)
+    os.close(fd)
+
+    # convert from numpy (0 based) to GDAL (1 based) indexing
+    TM4_lyr = otherinputs.radianceInfo[VIS_BAND_076um] + 1
     
     # Read in whole of band 4
     ds = gdal.Open(toareffile)
@@ -735,8 +913,9 @@ def doPotentialShadows(toareffile, b4_17):
     # Equation 19
     potentialShadows = ((b4_filled - b4) > 0.02)
     
-    driver = gdal.GetDriverByName('KEA')
-    outds = driver.Create(potentialShadowsFile, ds.RasterXSize, ds.RasterYSize, 1, gdal.GDT_Byte)
+    driver = gdal.GetDriverByName(DEFAULTDRIVERNAME)
+    outds = driver.Create(potentialShadowsFile, ds.RasterXSize, ds.RasterYSize, 
+                    1, gdal.GDT_Byte, DEFAULTCREATIONOPTIONS)
     proj = ds.GetProjection()
     outds.SetProjection(proj)
     transform = ds.GetGeoTransform()
@@ -764,7 +943,8 @@ def clumpClouds(cloudmaskfile):
 
 
 CLOUD_HEIGHT_SCALE = 10
-def make3Dclouds(clumps, numClumps, mtlfile, thermalfile, toareffile):
+def make3Dclouds(clumps, numClumps, thermalFile, thermalInfo, toaRefFile, 
+                        radianceBands):
     """
     Create 3-dimensional cloud objects from the cloud mask, and the thermal 
     information. Assumes a constant lapse rate to convert temperature into height.
@@ -788,12 +968,10 @@ def make3Dclouds(clumps, numClumps, mtlfile, thermalfile, toareffile):
     
     infiles.thermal = thermalfile
     otherargs.clumps = clumps
+    # TODO:
     otherargs.cloudClumpNdx = mdl.ValueIndexes(clumps, nullVals=[0])
     otherargs.numClumps = numClumps
-    thgain, thoffset, k1, k2 = getThermalGainAndOffset(mtlfile, thermalfile)
-    otherargs.k1, otherargs.k2 = k1, k2
-    otherargs.thgain = thgain
-    otherargs.thoffset = thoffset
+    otherargs.thermalInfo = thermalInfo
     
     # Run RIOS on whole image as one block
     (nRows, nCols) = referencePixgrid.getDimensions()
@@ -801,6 +979,8 @@ def make3Dclouds(clumps, numClumps, mtlfile, thermalfile, toareffile):
     controls.setWindowYsize(nRows)
     controls.setReferencePixgrid(referencePixgrid)
     controls.setCalcStats(False)
+    controls.setOutputDriverName(DEFAULTDRIVERNAME)
+    controls.setCreationOptions(DEFAULTCREATIONOPTIONS)
     
     applier.apply(cloudShapeFunc, infiles, outfiles, otherargs, controls=controls)
     
@@ -820,8 +1000,7 @@ def cloudShapeFunc(info, inputs, outputs, otherargs):
     output files, as they would just be read in again as whole arrays immediately. 
     
     """
-    bt = scaleThermalDNtoC(inputs.thermal, otherargs.thgain, otherargs.thoffset,
-            otherargs.k1, otherargs.k2)
+    bt = otherargs.thermalInfo.scaleThermalDNtoC(inputs.thermal)
     
     cloudShape = numpy.zeros(bt.shape, dtype=numpy.uint8)
     cloudBaseTemp = {}
@@ -859,24 +1038,11 @@ def cloudShapeFunc(info, inputs, outputs, otherargs):
     otherargs.cloudShape = cloudShape
     otherargs.cloudBaseTemp = cloudBaseTemp
 
-def readAngles(angles):
-    """
-    Read the angles out of the ang file
-    """
-    line = open(angles).readline()
-    rep = json.loads(line)
-    sza = rep['sza']
-    saa = rep['saa']
-    vza = rep['vza']
-    vaa = rep['vaa']
-    return sza, saa, vza, vaa
-
-
 METRES_PER_KM = 1000.0
 BYTES_PER_VOXEL = 4
 SOLIDCLOUD_MAXMEM = float(1024*1024*1024)
 
-def makeCloudShadowShapes(toareffile, cloudShape, cloudClumpNdx, anglesfile):
+def makeCloudShadowShapes(toareffile, radianceBands, cloudShape, cloudClumpNdx, anglesInfo):
     """
     Project the 3d cloud shapes onto horizontal surface, along the sun vector, to
     make the 2d shape of the shadow. 
@@ -889,11 +1055,8 @@ def makeCloudShadowShapes(toareffile, cloudShape, cloudClumpNdx, anglesfile):
     (nrows, ncols) = (ds.RasterYSize, ds.RasterXSize)
     del ds
 
-    sunZen, sunAz, satZen, satAz = readAngles(anglesfile)
-    sunZen = numpy.radians(sunZen)
-    sunAz = numpy.radians(sunAz)
-    satZen = numpy.radians(satZen)
-    satAz = numpy.radians(satAz)
+    # tell anglesInfo it may need to read data into memory
+    anglesInfo.prepareForQuerying()
     
     shadowShapesDict = {}
     
@@ -901,6 +1064,11 @@ def makeCloudShadowShapes(toareffile, cloudShape, cloudClumpNdx, anglesfile):
     for cloudID in cloudIDlist:
         cloudNdx = cloudClumpNdx.getIndexes(cloudID)
         numPix = len(cloudNdx[0])
+        
+        sunAz = anglesInfo.getSolarAzimuthAngle(cloudNdx)
+        sunZen = anglesInfo.getSolarAzimuthAngle(cloudNdx)
+        satAz = anglesInfo.getViewAzimuthAngle(cloudNdx)
+        satZen = anglesInfo.getViewZenithAngle(cloudNdx)
         
         # Cloudtop height of each pixel in cloud, in metres
         cloudHgt = METRES_PER_KM * cloudShape[cloudNdx] / CLOUD_HEIGHT_SCALE
@@ -972,6 +1140,9 @@ def makeCloudShadowShapes(toareffile, cloudShape, cloudClumpNdx, anglesfile):
         # Stash these shapes in a dictionary, along with the corresponding sun and satellite angles
         shadowShapesDict[cloudID] = (shadowNdx, satAz, satZen, sunAz, sunZen)
     
+    # no more querying needed
+    anglesInfo.releaseMemory()
+    
     return shadowShapesDict
 
 
@@ -999,7 +1170,7 @@ def getIntersectionCoords(filelist):
 
 
 def matchShadows(interimCloudmask, potentialShadowsFile, shadowShapesDict, cloudBaseTemp, 
-        Tlow, Thigh, cmdargs, pass1file):
+        Tlow, Thigh, cmdargs, pass1file, shadowbuffersize):
     """
     Match the cloud shadow shapes to the potential cloud shadows. 
     Write an output file of the resulting shadow layer. 
@@ -1035,8 +1206,10 @@ def matchShadows(interimCloudmask, potentialShadowsFile, shadowShapesDict, cloud
     (xoff, yoff) = topLeftDict[pass1file]
     nullmask = band.ReadAsArray(xoff, yoff, ncols, nrows).astype(numpy.bool)
     del ds
-    
-    interimShadowmask = lcrfs.change(potentialShadowsFile, 'stage', 'matchedshadows')
+
+    (fd, interimShadowmask) = tempfile.mkstemp(prefix='matchedshadows', dir=tempdir, 
+                                suffix=DEFAULTEXTENSION)
+    os.close(fd)
     
     shadowmask = numpy.zeros(potentialShadow.shape, dtype=numpy.bool)
     
@@ -1062,11 +1235,12 @@ def matchShadows(interimCloudmask, potentialShadowsFile, shadowShapesDict, cloud
     # Now apply a 3-pixel buffer, as per section 3.2 (2nd-last paragraph)
     # I have the buffer size settable from the commandline, with our default
     # being larger than the original. 
-    kernel = mdl.makeBufferKernel(cmdargs.shadowbuffersize)
+    kernel = mdl.makeBufferKernel(shadowbuffersize)
     shadowmaskBuffered = maximum_filter(shadowmask, footprint=kernel)
 
-    driver = gdal.GetDriverByName('KEA')
-    ds = driver.Create(interimShadowmask, xsize, ysize, 1, gdal.GDT_Byte)
+    driver = gdal.GetDriverByName(DEFAULTDRIVERNAME)
+    ds = driver.Create(interimShadowmask, xsize, ysize, 1, gdal.GDT_Byte,
+                DEFAULTCREATIONOPTIONS)
     ds.SetProjection(proj)
     ds.SetGeoTransform(geotrans)
     band = ds.GetRasterBand(1)
@@ -1199,8 +1373,8 @@ def matchOneShadow(cloudmask, shadowEntry, potentialShadow, Tcloudbase, Tlow, Th
     return matchedShadowNdx
 
 
-def finalizeAll(interimCloudmask, interimShadowmask, pass1file, outputfile, 
-        cmdargs):
+def finalizeAll(interimCloudmask, interimShadowmask, pass1file, outputfile,
+            cloudbuffersize):
     """
     Use the cloud and shadow masks to mask the snow layer (as per Zhu & Woodcock). 
     Apply the optional extra buffer to the cloud mask, and write to final file. 
@@ -1214,14 +1388,16 @@ def finalizeAll(interimCloudmask, interimShadowmask, pass1file, outputfile,
     infiles.shadow = interimShadowmask
     infiles.pass1 = pass1file
     outfiles.out = outputfile
-    controls.setOverlap(cmdargs.cloudbuffersize)
+    controls.setOverlap(cloudbuffersize)
     controls.setThematic(True)
     controls.setStatsIgnore(0)
     controls.setWindowXsize(RIOS_WINDOW_SIZE)
     controls.setWindowYsize(RIOS_WINDOW_SIZE)
+    controls.setOutputDriverName(DEFAULTDRIVERNAME)
+    controls.setCreationOptions(DEFAULTCREATIONOPTIONS)
     
-    if cmdargs.cloudbuffersize > 0:
-        otherargs.bufferkernel = mdl.makeBufferKernel(cmdargs.cloudbuffersize)
+    if cloudbuffersize > 0:
+        otherargs.bufferkernel = mdl.makeBufferKernel(cloudbuffersize)
 
     # determine if we are SLC-off
     otherargs.isSLCoff = False
@@ -1319,62 +1495,3 @@ def maskAndBuffer(info, inputs, outputs, otherargs):
     out[resetNullmask] = outNullval
     outputs.out = numpy.array([out])
     
-def addHistory(outfile, cmdargs, thermalfile):
-    """
-    Add processing history to all output files
-    """
-    descriptionStr = """
-        %s mask, from Fmask Landsat TM cloud algorithm. 
-        Zhu, Z. and Woodcock, C.E. (2012). 
-        Object-based cloud and cloud shadow detection in Landsat imagery
-        Remote Sensing of Environment 118 (2012) 83-94.
-    """
-    parents = [cmdargs.radiancefile, thermalfile]
-    
-    opt = {}
-    opt['DESCRIPTION'] = descriptionStr % "Cloud, Cloud shadow and Snow"
-    if not cmdargs.nosaturationtest:
-        opt['DESCRIPTION'] += " Extra test performed to mask saturated cloud."
-    opt['BUFFER'] = str(cmdargs.cloudbuffersize)
-    history.insertMetadataFilename(outfile, parents, opt)
-
-def scaleThermalDNtoC(scaledBT, gain, offset, k1, k2):
-    """
-    Use the given params to unscale the thermal, and then 
-    convert it from K to C. Return a single 2-d array of the 
-    temperature in deg C. 
-    """
-    KELVIN_ZERO_DEGC = scipy.constants.zero_Celsius
-    rad = scaledBT[0].astype(float) * gain + offset
-    # see http://www.yale.edu/ceo/Documentation/Landsat_DN_to_Kelvin.pdf
-    # and https://landsat.usgs.gov/Landsat8_Using_Product.php
-    rad[rad <= 0] = 0.00001 # to stop errors below
-    temp = k2 / numpy.log(k1 / rad + 1.0)
-    bt = temp - KELVIN_ZERO_DEGC
-    return bt
-
-
-def adjustLayerNumbers(radiancefile):
-    """
-    The Landsat-8 OLI input files have an extra band at the beginning, so 
-    the layer numbers used by the algorithm are wrong. We fudge this
-    by adjusting the global variables which have been used for these layer 
-    numbers. 
-    
-    """
-    global TM1, TM2, TM3, TM4, TM5, TM7, TM4_lyr
-    if lcrfs.lcrfs('satellite', radiancefile) == 'landsat8':
-        TM1 += 1
-        TM2 += 1
-        TM3 += 1
-        TM4 += 1
-        TM5 += 1
-        TM7 += 1
-        TM4_lyr += 1
-
-
-class LandsatCloudError(Exception): pass
-class InfileError(LandsatCloudError): pass
-
-if __name__ == "__main__":
-    mainRoutine()
