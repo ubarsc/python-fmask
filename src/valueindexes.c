@@ -53,9 +53,9 @@ npy_intp *pDims, *pCurrIdx;
         return NULL;
     }
 
-    if( (PyArray_TYPE(pIndexes) != NPY_INT32) || (PyArray_TYPE(pValLU) != NPY_INT32) || (PyArray_TYPE(pCurrentIdx) != NPY_INT32))
+    if( (PyArray_TYPE(pIndexes) != NPY_UINT32) || (PyArray_TYPE(pValLU) != NPY_UINT32) || (PyArray_TYPE(pCurrentIdx) != NPY_UINT32))
     {
-        PyErr_SetString(GETSTATE(self)->error, "parameters 1, 4 and 5 must be int32 arrays");
+        PyErr_SetString(GETSTATE(self)->error, "parameters 1, 4 and 5 must be uint32 arrays");
         return NULL;
     }
 
@@ -90,18 +90,18 @@ npy_intp *pDims, *pCurrIdx;
         j = 0;
         if( (arrVal >= nMin) && (arrVal <= nMax))
         {
-            j = *((npy_int32*)PyArray_GETPTR1(pValLU, arrVal - nMin));
+            j = *((npy_uint32*)PyArray_GETPTR1(pValLU, arrVal - nMin));
             nFound = (j < MAXUINT32);
         }
 
         if( nFound )
         {
-            m = *((npy_int32*)PyArray_GETPTR1(pCurrentIdx, j));
+            m = *((npy_uint32*)PyArray_GETPTR1(pCurrentIdx, j));
             for( i = 0; i < nDim; i++ )
             {
-                *((npy_int32*)PyArray_GETPTR2(pIndexes, m, i)) = pCurrIdx[i];
+                *((npy_uint32*)PyArray_GETPTR2(pIndexes, m, i)) = pCurrIdx[i];
             }
-            pCurrIdx[j] = m + 1;
+            *((npy_uint32*)PyArray_GETPTR1(pCurrentIdx, j)) = m + 1;
         }
 
         /* code that updates curridx - incs the next dim

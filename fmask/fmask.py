@@ -116,7 +116,10 @@ def setDefaultDriver():
     DEFAULTCREATIONOPTIONS = ['COMPRESSED=TRUE','IGNOREUTM=TRUE']
     creationOptionsStr = os.getenv('FMASK_DFLT_DRIVEROPTIONS')
     if creationOptionsStr is not None:
-        DEFAULTCREATIONOPTIONS = creationOptionsStr.split()
+        if creationOptionsStr == 'None':
+            DEFAULTCREATIONOPTIONS = None
+        else:
+            DEFAULTCREATIONOPTIONS = creationOptionsStr.split()
         
     driver = gdal.GetDriverByName(DEFAULTDRIVERNAME)
     if driver is None:

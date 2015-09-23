@@ -19,6 +19,13 @@ from __future__ import print_function, division
 import numpy
 from . import _valueindexes
 
+class ValueIndexesError(Exception):
+    pass
+class NonIntTypeError(ValueIndexesError):
+    pass
+class RangeError(ValueIndexesError):
+    pass
+
 class ValueIndexes(object):
     """
     An object which contains the indexes for every value in a given array.
@@ -82,9 +89,7 @@ class ValueIndexes(object):
         in the results, so that indexes for these cannot be determined. 
         
         """
-        integerTypes = [numpy.int8, numpy.uint8, numpy.int16, numpy.uint16,
-            numpy.int32, numpy.uint32]
-        if a.dtype not in integerTypes:
+        if not numpy.issubdtype(a.dtype, numpy.integer):
             raise NonIntTypeError("ValueIndexes only works on integer-like types. Array is %s"%a.dtype)
              
         if numpy.isscalar(nullVals):
@@ -127,9 +132,6 @@ class ValueIndexes(object):
             # into the indexes array. A given element is incremented whenever it finds
             # a new element of that value. 
             currentIndex = self.start.copy().astype(numpy.uint32)
-
-            if not numpy.issubdtype(a.dtype, numpy.integer):
-                raise NonIntTypeError('Array must be of integer type')
 
             _valueindexes.valndxFunc(a, self.indexes, valrange[0], valrange[1], 
                         self.valLU, currentIndex)
