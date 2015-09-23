@@ -1168,6 +1168,18 @@ def getIntersectionCoords(filelist):
         tlDict[filename] = (int(tl.x), int(tl.y))
     return (tlDict, intersectionPixgrid)
 
+def makeBufferKernel(buffsize):
+    """
+    Make a 2-d array for buffering. It represents a circle of 
+    radius buffsize pixels, with 1 inside the circle, and zero outside.
+    """
+    bufferkernel = None
+    if buffsize > 0:
+        n = 2 * buffsize + 1
+        (r, c) = numpy.mgrid[:n, :n]
+        radius = numpy.sqrt((r-buffsize)**2 + (c-buffsize)**2)
+        bufferkernel = (radius <= buffsize).astype(numpy.uint8)
+    return bufferkernel
 
 def matchShadows(interimCloudmask, potentialShadowsFile, shadowShapesDict, cloudBaseTemp, 
         Tlow, Thigh, cmdargs, pass1file, shadowbuffersize):
@@ -1235,7 +1247,7 @@ def matchShadows(interimCloudmask, potentialShadowsFile, shadowShapesDict, cloud
     # Now apply a 3-pixel buffer, as per section 3.2 (2nd-last paragraph)
     # I have the buffer size settable from the commandline, with our default
     # being larger than the original. 
-    kernel = mdl.makeBufferKernel(shadowbuffersize)
+    kernel = makeBufferKernel(shadowbuffersize)
     shadowmaskBuffered = maximum_filter(shadowmask, footprint=kernel)
 
     driver = gdal.GetDriverByName(DEFAULTDRIVERNAME)
@@ -1397,7 +1409,7 @@ def finalizeAll(interimCloudmask, interimShadowmask, pass1file, outputfile,
     controls.setCreationOptions(DEFAULTCREATIONOPTIONS)
     
     if cloudbuffersize > 0:
-        otherargs.bufferkernel = mdl.makeBufferKernel(cloudbuffersize)
+        otherargs.bufferkernel = makeBufferKernel(cloudbuffersize)
 
     # determine if we are SLC-off
     otherargs.isSLCoff = False

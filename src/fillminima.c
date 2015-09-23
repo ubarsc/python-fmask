@@ -15,7 +15,18 @@
 * along with this program; if not, write to the Free Software
 * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
+/*
+Module to implement filling of local minima in a raster surface. 
 
+The algorithm is from 
+    Soille, P., and Gratin, C. (1994). An efficient algorithm for drainage network
+        extraction on DEMs. J. Visual Communication and Image Representation. 
+        5(2). 181-189. 
+        
+The algorithm is intended for hydrological processing of a DEM, but is used by the 
+Fmask cloud shadow algorithm as part of its process for finding local minima which 
+represent potential shadow objects. 
+*/
 #include <Python.h>
 #include "numpy/arrayobject.h"
 #include <math.h>
@@ -293,7 +304,14 @@ static PyMethodDef FillMinimaMethods[] = {
     {"fillMinima", fillminima_fillMinima, METH_VARARGS, 
 "function to implement filling of local minima in a raster surface:\n"
 "call signature: fillminima(inarray, outarray, hMin, hMax, nullmask, boundaryval, boundaryRows, boundaryCols)\n"
-"where:\n"},
+"where:\n"
+"   inarray is the input array\n"
+"   outarray is the output array\n"
+"   hMin is the minimum of the input image (excluding null values)\n"
+"   hMax is the maximum of the input image (excluding null values)\n"
+"   nullmask is the mask of where null values exist in inarray\n"
+"   boundaryVal is the input boundar value\n"
+"   boundaryRows and boundaryCols specify the boundary of the search\n"},
     {NULL}        /* Sentinel */
 };
 
@@ -335,18 +353,21 @@ PyMODINIT_FUNC
 init_fillminima(void)
 #endif
 {
+PyObject *pModule;
+struct FillMinimaState *state;
+
     // initialize the numpy stuff
     import_array();
 
 #if PY_MAJOR_VERSION >= 3
-    PyObject *pModule = PyModule_Create(&moduledef);
+    pModule = PyModule_Create(&moduledef);
 #else
-    PyObject *pModule = Py_InitModule("_fillminima", FillMinimaMethods);
+    pModule = Py_InitModule("_fillminima", FillMinimaMethods);
 #endif
     if( pModule == NULL )
         INITERROR;
 
-    struct FillMinimaState *state = GETSTATE(pModule);
+    state = GETSTATE(pModule);
 
     // Create and add our exception type
     state->error = PyErr_NewException("_fillminima.error", NULL, NULL);

@@ -19,6 +19,8 @@ from numpy.distutils.core import setup, Extension
 
 fillminimaC = Extension(name='_fillminima', 
                 sources=['src/fillminima.c'])
+valueIndexesC = Extension(name='_valueindexes',
+                sources=['src/valueindexes.c'])
 
 # do the setup
 setup( name = 'python-fmask',
@@ -28,7 +30,7 @@ setup( name = 'python-fmask',
         author_email = 'neil.flood@science.dsiti.qld.gov.au',
         packages = ['fmask'],
         ext_package = 'fmask',
-        ext_modules = [fillminimaC],
+        ext_modules = [fillminimaC, valueIndexesC],
         license='LICENSE.txt',
         url='https://bitbucket.org/chchrsc/python-fmask',
         classifiers=['Intended Audience :: Developers',
@@ -38,6 +40,6 @@ setup( name = 'python-fmask',
           'Programming Language :: Python :: 3',
           'Programming Language :: Python :: 3.2',
           'Programming Language :: Python :: 3.3',
-          'Programming Language :: Python :: 3.4'])
-
-        
+          'Programming Language :: Python :: 3.4',
+          'Programming Language :: Python :: 3.5'])
+          
