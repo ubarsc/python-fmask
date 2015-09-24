@@ -16,6 +16,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 from numpy.distutils.core import setup, Extension
+import glob
 
 fillminimaC = Extension(name='_fillminima', 
                 sources=['src/fillminima.c'])
@@ -28,6 +29,7 @@ setup( name = 'python-fmask',
         description = 'Module to implement the fmask cloud masking algorithm (Zhu, Wang & Woodcock 2015)',
         author = 'Neil Flood',
         author_email = 'neil.flood@science.dsiti.qld.gov.au',
+        scripts = glob.glob("bin/*.py"),
         packages = ['fmask'],
         ext_package = 'fmask',
         ext_modules = [fillminimaC, valueIndexesC],
