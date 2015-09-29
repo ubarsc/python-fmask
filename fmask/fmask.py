@@ -421,9 +421,9 @@ def readAnglesFromLandsatMTL(mtlfile):
     sza = None
     
     if 'SUN_AZIMUTH' in mtlInfo:
-        saa = float(mtlInfo['SUN_AZIMUTH'])
+        saa = numpy.radians(float(mtlInfo['SUN_AZIMUTH']))
     if 'SUN_ELEVATION' in mtlInfo:
-        sza = 90.0 - float(mtlInfo['SUN_ELEVATION'])
+        sza = numpy.radians(90.0 - float(mtlInfo['SUN_ELEVATION']))
 
     if saa is None or sza is None:
         msg = 'Cannot find SUN_AZIMUTH/SUN_ELEVATION fields in MTL file'
@@ -510,14 +510,14 @@ def doFmask(radianceFile, radianceBands, toaRefFile, anglesInfo, outMask,
     
     if verbose: print("Matching shadows")
     interimShadowmask = matchShadows(interimCloudmask, potentialShadowsFile, shadowShapesDict, 
-        cloudBaseTemp, Tlow, Thigh, cmdargs, pass1file, shadowbuffersize)
+        cloudBaseTemp, Tlow, Thigh, pass1file, shadowbuffersize, verbose, tempdir)
     
-    finalizeAll(interimCloudmask, interimShadowmask, pass1file, outfile, cloudbuffersize)
+    finalizeAll(interimCloudmask, interimShadowmask, pass1file, outMask, cloudbuffersize)
     
     # Remove temporary files
-    if not cmdargs.keepintermediates:
+    if not keepintermediates:
         for filename in [pass1file, pass2file, interimCloudmask, potentialShadowsFile,
-                interimShadowmask, toareffile]:
+                interimShadowmask]:
             os.remove(filename)
 
     if verbose: print('finished fmask')
@@ -646,7 +646,12 @@ def potentialCloudFirstPass(info, inputs, outputs, otherargs):
     # This is an extra saturation test added by DERM, and is not part of the Fmask algorithm. 
     # However, some cloud centres are saturated,and thus fail the whiteness and haze tests
     if otherargs.saturationtest:
-        saturatedVis = reduce(numpy.logical_or, [(inputs.radiance[n] == 255) for n in [TM1, TM2, TM3]])
+        saturatedVis = None
+        for n in [TM1, TM2, TM3]:
+            if saturatedVis is None:
+                saturatedVis = (inputs.radiance[n] == 255)
+            else:
+                saturatedVis = numpy.logical_or(saturatedVis, inputs.radiance[n] == 255)
         veryBright = (meanVis > 0.45)
         saturatedAndBright = saturatedVis & veryBright
         pcp[saturatedAndBright] = True
@@ -742,7 +747,7 @@ def calcBTthresholds(otherargs):
 # For scaling probability values so I can store them in 8 bits
 PROB_SCALE = 100.0
 
-def doPotentialCloudSecondPass(toareffile, radianceBands,  
+def doPotentialCloudSecondPass(toareffile, radianceBands, 
         thermalInfo, pass1file, Twater, Tlow, Thigh, tempdir):
     """
     Second pass for potential cloud layer
@@ -809,7 +814,7 @@ def potentialCloudSecondPass(info, inputs, outputs, otherargs):
         # There is no water, so who cares. 
         wTemperature_prob = 1
     
-    TM5 = otherinputs.radianceInfo[VIS_BAND_155um]
+    TM5 = otherargs.radianceBands[VIS_BAND_155um]
     # Equation 10
     brightness_prob = numpy.minimum(ref[TM5], 0.11) / 0.11
     
@@ -921,7 +926,7 @@ def doPotentialShadows(toareffile, radianceBands, b4_17, tempdir):
     os.close(fd)
 
     # convert from numpy (0 based) to GDAL (1 based) indexing
-    TM4_lyr = otherinputs.radianceInfo[VIS_BAND_076um] + 1
+    TM4_lyr = radianceBands[VIS_BAND_076um] + 1
     
     # Read in whole of band 4
     ds = gdal.Open(toareffile)
@@ -985,7 +990,7 @@ def make3Dclouds(clumps, numClumps, thermalInfo, toaRefFile,
     # Find out the pixel grid of the toareffile, so we can use that for RIOS.
     # this is necessary because the thermal might be on a different grid,
     # and we can use RIOS to resample that. 
-    referencePixgrid = pixelgrid.pixelGridFromFile(toareffile)
+    referencePixgrid = pixelgrid.pixelGridFromFile(toaRefFile)
     
     infiles = applier.FilenameAssociations()
     outfiles = applier.FilenameAssociations()
@@ -1092,7 +1097,7 @@ def makeCloudShadowShapes(toareffile, radianceBands, cloudShape, cloudClumpNdx, 
         numPix = len(cloudNdx[0])
         
         sunAz = anglesInfo.getSolarAzimuthAngle(cloudNdx)
-        sunZen = anglesInfo.getSolarAzimuthAngle(cloudNdx)
+        sunZen = anglesInfo.getSolarZenithAngle(cloudNdx)
         satAz = anglesInfo.getViewAzimuthAngle(cloudNdx)
         satZen = anglesInfo.getViewZenithAngle(cloudNdx)
         
@@ -1208,7 +1213,7 @@ def makeBufferKernel(buffsize):
     return bufferkernel
 
 def matchShadows(interimCloudmask, potentialShadowsFile, shadowShapesDict, cloudBaseTemp, 
-        Tlow, Thigh, cmdargs, pass1file, shadowbuffersize):
+        Tlow, Thigh, pass1file, shadowbuffersize, verbose, tempdir):
     """
     Match the cloud shadow shapes to the potential cloud shadows. 
     Write an output file of the resulting shadow layer. 
@@ -1265,7 +1270,7 @@ def matchShadows(interimCloudmask, potentialShadowsFile, shadowShapesDict, cloud
         else:
             unmatchedCount += 1
 
-    if cmdargs.verbose:
+    if verbose:
         print("No shadow found for %s of %s clouds " % (unmatchedCount, len(cloudIDlist)))
 
     del potentialShadow, cloudmask, nullmask

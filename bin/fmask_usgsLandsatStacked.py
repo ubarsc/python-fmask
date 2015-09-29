@@ -42,6 +42,10 @@ class CmdArgs(object):
             help='Input .MTL file')
         self.parser.add_option('-o', '--output', dest='output',
             help='output cloud mask')
+        self.parser.add_option('-V', '--verbose', dest='verbose', default=False,
+            action='store_true', help='verbose output')
+        self.parser.add_option('-k', '--keepintermediates', dest='keepintermediates', 
+            default=False, action='store_true', help='verbose output')
             
         (options, self.args) = self.parser.parse_args()
         self.__dict__.update(options.__dict__)
@@ -79,7 +83,8 @@ def mainRoutine():
         bandInfo = fmask.LANDSAT8_OLI_BANDS
     
     fmask.doFmask(cmdargs.visible, bandInfo, cmdargs.toa, anglesInfo, 
-                cmdargs.output, cmdargs.thermal, thermalInfo=thermalInfo)
+                cmdargs.output, cmdargs.thermal, thermalInfo=thermalInfo,
+                verbose=cmdargs.verbose, keepintermediates=cmdargs.keepintermediates)
 
 if __name__ == '__main__':
     mainRoutine()

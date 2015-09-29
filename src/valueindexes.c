@@ -136,8 +136,15 @@ npy_intp *pDims, *pCurrIdx;
 static PyMethodDef ValueIndexesMethods[] = {
     {"valndxFunc", valueIndexes_valndxFunc, METH_VARARGS, 
 "function to go through an array and create a lookup table of the array indexes for each distinct value in the data array:\n"
-"call signature: valndxFunc(a, indexes, minVal, maxVal, valLU, currentIndex, getVal, curridx)\n"
-"where:\n"},
+"call signature: valndxFunc(input, indexes, min, max, ValLU, CurrentIdx)\n"
+"where:\n"
+"   input is the input array\n"
+"   indexes is the output array which will be filled with the indexes of each value\n"
+"   min is the minimum value of input\n"
+"   max is the minimum value of input\n"
+"   ValLU is the lookup array to index into indexes and CurrentIdx\n"
+"   CurrentIdx has the current index\n"
+"   \n"},
     {NULL}        /* Sentinel */
 };
 
@@ -182,7 +189,7 @@ init_valueindexes(void)
 PyObject *pModule;
 struct ValueIndexesState *state;
 
-    // initialize the numpy stuff
+    /* initialize the numpy stuff */
     import_array();
 
 #if PY_MAJOR_VERSION >= 3
@@ -195,7 +202,7 @@ struct ValueIndexesState *state;
 
     state = GETSTATE(pModule);
 
-    // Create and add our exception type
+    /* Create and add our exception type */
     state->error = PyErr_NewException("_valueindexes.error", NULL, NULL);
     if( state->error == NULL )
     {
