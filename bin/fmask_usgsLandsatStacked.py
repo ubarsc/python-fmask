@@ -25,6 +25,7 @@ from __future__ import print_function, division
 import sys
 import optparse
 from fmask import fmask
+from fmask import config
 
 class CmdArgs(object):
     """
@@ -32,8 +33,6 @@ class CmdArgs(object):
     """
     def __init__(self):
         self.parser = optparse.OptionParser()
-        self.parser.add_option('-v', '--visible', dest='visible',
-            help='Input stack of visible bands')
         self.parser.add_option('-t', '--thermal', dest='thermal',
             help='Input stack of thermal bands')
         self.parser.add_option('-a', '--toa', dest='toa',
@@ -50,7 +49,7 @@ class CmdArgs(object):
         (options, self.args) = self.parser.parse_args()
         self.__dict__.update(options.__dict__)
         
-        if (self.visible is None or self.thermal is None or 
+        if (self.thermal is None or 
                 self.mtl is None is None or self.output is None
                 or self.toa is None):
             self.parser.print_help()
@@ -64,28 +63,37 @@ def mainRoutine():
     
     # 1040nm thermal band should always be the first (or only) band in a
     # stack of Landsat thermal bands
-    thermalInfo = fmask.readThermalInfoFromLandsatMTL(cmdargs.mtl, 
-                        cmdargs.thermal, 0)
+    thermalInfo = config.readThermalInfoFromLandsatMTL(cmdargs.mtl)
                         
-    anglesInfo = fmask.readAnglesFromLandsatMTL(cmdargs.mtl)
+    anglesInfo = config.readAnglesFromLandsatMTL(cmdargs.mtl)
     
-    mtlInfo = fmask.readMTLFile(cmdargs.mtl)
+    mtlInfo = config.readMTLFile(cmdargs.mtl)
     landsat = mtlInfo['SPACECRAFT_ID'][-1]
     
-    # first 3 are equivalent anyway, but for completeness..
     if landsat == '4':
-        bandInfo = fmask.LANDSAT4_TM_BANDS
+        sensor = config.FMASK_LANDSAT47
     elif landsat == '5':
-        bandInfo = fmask.LANDSAT5_TM_BANDS
+        sensor = config.FMASK_LANDSAT47
     elif landsat == '7':
-        bandInfo = fmask.LANDSAT7_ETM_BANDS
+        sensor = config.FMASK_LANDSAT47
     elif landsat == '8':
-        bandInfo = fmask.LANDSAT8_OLI_BANDS
+        sensor = config.FMASK_LANDSAT8
+    else:
+        raise SystemExit('Unsupported Landsat sensor')
+        
+    fmaskFilenames = config.FmaskFilenames()
+    fmaskFilenames.setTOAReflectanceFile(cmdargs.toa)
+    fmaskFilenames.setThermalFile(cmdargs.thermal)
+    fmaskFilenames.setOutputCloudMaskFile(cmdargs.output)
     
-    fmask.doFmask(cmdargs.visible, bandInfo, cmdargs.toa, anglesInfo, 
-                cmdargs.output, cmdargs.thermal, thermalInfo=thermalInfo,
-                verbose=cmdargs.verbose, keepintermediates=cmdargs.keepintermediates)
-
+    fmaskConfig = config.FmaskConfig(sensor)
+    fmaskConfig.setThermalInfo(thermalInfo)
+    fmaskConfig.setAnglesInfo(anglesInfo)
+    fmaskConfig.setKeepIntermediates(cmdargs.keepintermediates)
+    fmaskConfig.setVerbose(cmdargs.verbose)
+    
+    fmask.doFmask(fmaskFilenames, fmaskConfig)
+    
 if __name__ == '__main__':
     mainRoutine()
 
