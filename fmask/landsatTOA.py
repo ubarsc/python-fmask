@@ -22,6 +22,7 @@ import sys
 import numpy
 from rios import applier, cuiprogress
 from . import fmask
+from . import config
 
 # Derived by Pete Bunting from 6S
 LANDSAT8_ESUN = [1876.61, 1970.03, 1848.9, 1571.3, 967.66, 245.73, 82.03]
@@ -119,7 +120,7 @@ def makeTOAReflectance(infile, mtlFile, outfile):
     E = exoatmospheric irradiance for the band, and 
     theta = solar zenith angle.
     """
-    mtlInfo = fmask.readMTLFile(mtlFile)
+    mtlInfo = config.readMTLFile(mtlFile)
     spaceCraft = mtlInfo['SPACECRAFT_ID']
     date = mtlInfo['DATE_ACQUIRED']
     date = date.replace('-', '')
@@ -142,8 +143,6 @@ def makeTOAReflectance(infile, mtlFile, outfile):
 
     controls = applier.ApplierControls()
     controls.progress = cuiprogress.GDALProgressBar()
-    controls.setOutputDriverName(fmask.DEFAULTDRIVERNAME)
-    controls.setCreationOptions(fmask.DEFAULTCREATIONOPTIONS)
     
     applier.apply(riosTOA, inputs, outputs, otherinputs, controls=controls)
 

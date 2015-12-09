@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+
 """
 Implement the cloud and shadow algorithms known collectively as Fmask, 
 as published in 
@@ -192,6 +192,8 @@ def doPotentialCloudFirstPass(fmaskFilenames, fmaskConfig, missingThermal):
         infiles.thermal = fmaskFilenames.thermal
     if fmaskFilenames.saturationMask is not None:
         infiles.saturationMask = fmaskFilenames.saturationMask
+    elif fmaskConfig.verbose:
+        print('Saturation mask not supplied - saturated areas may not be detected')
     
     (fd, outfiles.pass1) = tempfile.mkstemp(prefix='pass1', dir=fmaskConfig.tempDir, 
                                 suffix=fmaskConfig.defaultExtension)
@@ -288,7 +290,7 @@ def potentialCloudFirstPass(info, inputs, outputs, otherargs):
     # This is an extra saturation test added by DERM, and is not part of the Fmask algorithm. 
     # However, some cloud centres are saturated,and thus fail the whiteness and haze tests
     if hasattr(inputs, 'saturationMask'):
-        saturatedVis = inputs.saturationMask != 0
+        saturatedVis = inputs.saturationMask[0] != 0
         veryBright = (meanVis > 0.45)
         saturatedAndBright = saturatedVis & veryBright
         pcp[saturatedAndBright] = True

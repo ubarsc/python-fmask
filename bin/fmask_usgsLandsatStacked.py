@@ -39,9 +39,11 @@ class CmdArgs(object):
             help='Input stack of TOA reflectance (see fmask_usgsLandsatTOA.py)')
         self.parser.add_option('-m', '--mtl', dest='mtl',
             help='Input .MTL file')
+        self.parser.add_option('-s', '--saturation', dest='saturation',
+            help='Input saturation mask (see fmask_usgsLandsatSaturationMask.py)')
         self.parser.add_option('-o', '--output', dest='output',
             help='output cloud mask')
-        self.parser.add_option('-V', '--verbose', dest='verbose', default=False,
+        self.parser.add_option('-v', '--verbose', dest='verbose', default=False,
             action='store_true', help='verbose output')
         self.parser.add_option('-k', '--keepintermediates', dest='keepintermediates', 
             default=False, action='store_true', help='verbose output')
@@ -85,6 +87,10 @@ def mainRoutine():
     fmaskFilenames.setTOAReflectanceFile(cmdargs.toa)
     fmaskFilenames.setThermalFile(cmdargs.thermal)
     fmaskFilenames.setOutputCloudMaskFile(cmdargs.output)
+    if cmdargs.saturation is not None:
+        fmaskFilenames.setSaturationMask(cmdargs.saturation)
+    else:
+        print('saturation mask not supplied - see fmask_usgsLandsatSaturationMask.py')
     
     fmaskConfig = config.FmaskConfig(sensor)
     fmaskConfig.setThermalInfo(thermalInfo)

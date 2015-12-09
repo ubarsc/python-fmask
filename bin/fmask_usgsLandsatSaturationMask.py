@@ -20,7 +20,8 @@ from __future__ import print_function, division
 
 import sys
 import optparse
-from fmask import landsatTOA
+from fmask import saturationcheck
+from fmask import config
 
 class CmdArgs(object):
     """
@@ -33,7 +34,7 @@ class CmdArgs(object):
         self.parser.add_option('-m', '--mtl', dest='mtl', 
             help='.MTL  file')
         self.parser.add_option('-o', '--output', dest='output',
-            help='Output TOA reflectance file')
+            help='Output saturation mask file')
 
         (options, self.args) = self.parser.parse_args()
         self.__dict__.update(options.__dict__)
@@ -46,9 +47,28 @@ class CmdArgs(object):
 def mainRoutine():
     cmdargs = CmdArgs()
     
-    landsatTOA.makeTOAReflectance(cmdargs.infile, cmdargs.mtl, cmdargs.output)
+    mtlInfo = config.readMTLFile(cmdargs.mtl)
+    landsat = mtlInfo['SPACECRAFT_ID'][-1]
+    
+    if landsat == '4':
+        sensor = config.FMASK_LANDSAT47
+    elif landsat == '5':
+        sensor = config.FMASK_LANDSAT47
+    elif landsat == '7':
+        sensor = config.FMASK_LANDSAT47
+    elif landsat == '8':
+        sensor = config.FMASK_LANDSAT8
+    else:
+        raise SystemExit('Unsupported Landsat sensor')
+
+    # needed so the saturation function knows which
+    # bands are visible etc.
+    fmaskConfig = config.FmaskConfig(sensor)
+    
+    saturationcheck.makeSaturationMask(fmaskConfig, cmdargs.infile, 
+            cmdargs.output)
     
 if __name__ == '__main__':
     mainRoutine()
     
-    
+
