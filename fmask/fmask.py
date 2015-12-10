@@ -234,9 +234,6 @@ def potentialCloudFirstPass(info, inputs, outputs, otherargs):
     ref = inputs.toaref.astype(numpy.float) / 1000.0
     # Clamp off any reflectance <= 0
     ref[ref<=0] = 0.00001
-    if hasattr(inputs, 'thermal'):
-        # Brightness temperature in degrees C
-        bt = otherargs.thermalInfo.scaleThermalDNtoC(inputs.thermal)
 
     # Extract the bands we need
     blue = otherargs.refBands[config.BAND_BLUE]
@@ -248,23 +245,29 @@ def potentialCloudFirstPass(info, inputs, outputs, otherargs):
     THERM = otherargs.thermalInfo.thermalBand1040um
     
     refNull = info.getNoDataValueFor(inputs.toaref)
-    thermalNull = info.getNoDataValueFor(inputs.thermal)
-    # TODO: Check Nulls ok in reflectance file
-    nullmask = ((inputs.toaref[blue] == refNull) | (inputs.thermal[THERM] == thermalNull))
     # Special mask needed only for resets in final pass
     refNullmask = (inputs.toaref[blue] == refNull)
-    thermNullmask = (inputs.thermal[THERM] == thermalNull)
-    
-    imgshape = bt.shape
+    if hasattr(inputs, 'thermal'):
+        thermalNull = info.getNoDataValueFor(inputs.thermal)
+        thermNullmask = (inputs.thermal[THERM] == thermalNull)
+        nullmask = (refNullmask | thermNullmask)
+        # Brightness temperature in degrees C
+        bt = otherargs.thermalInfo.scaleThermalDNtoC(inputs.thermal)
+    else:
+        thermNullmask = numpy.zeros_like(ref[0], dtype=numpy.bool)
+        nullmask = refNullmask
     
     # Equation 1
     ndsi = (ref[green] - ref[swir1]) / (ref[green] + ref[swir1])
     ndvi = (ref[nir] - ref[red]) / (ref[nir] + ref[red])
-    basicTest = (ref[swir2] > 0.03) & (bt < 27) & (ndsi < 0.8) & (ndvi < 0.8)
+    # In two parts, in case we have no thermal.
+    basicTest = (ref[swir2] > 0.03) & (ndsi < 0.8) & (ndvi < 0.8)
+    if hasattr(inputs, 'thermal'):
+        basicTest = (basicTest & (bt < 27))
     
     # Equation 2
     meanVis = (ref[blue] + ref[green] + ref[red]) / 3.0
-    whiteness = numpy.zeros(imgshape)
+    whiteness = numpy.zeros(ref[0].shape)
     for n in [blue, green, red]:
         whiteness = whiteness + numpy.absolute((ref[n] - meanVis) / meanVis)
     # TODO: config for 0.7
@@ -274,7 +277,7 @@ def potentialCloudFirstPass(info, inputs, outputs, otherargs):
     hazeTest = ((ref[blue] - 0.5 * ref[red] - 0.08) > 0)
     
     # Equation 4
-    b45test = ref[nir] / ref[swir1] > 0.75
+    b45test = ((ref[nir] / ref[swir1]) > 0.75)
     
     # Equation 5
     waterTest = numpy.logical_or(
@@ -284,11 +287,22 @@ def potentialCloudFirstPass(info, inputs, outputs, otherargs):
 
     waterTest[nullmask] = False
     
+    if config.BAND_CIRRUS in otherargs.refBands:
+        # Zhu et al 2015, section 2.2.1. 
+        cirrus = otherargs.refBands[config.BAND_CIRRUS]
+        cirrusBandTest = (ref[cirrus] > 0.01)
+    
     # Equation 6. Potential cloud pixels (first pass)
     pcp = basicTest & whitenessTest & hazeTest & b45test
     
+    # Include cirrusBandTest, from 2015 paper. Zhu et al. are not clear whether it is
+    # supposed to be combined with previous tests using AND or OR, so I tried both
+    # and picked what seemed best. 
+    if config.BAND_CIRRUS in otherargs.refBands:
+        pcp = (pcp | cirrusBandTest)
+    
     # This is an extra saturation test added by DERM, and is not part of the Fmask algorithm. 
-    # However, some cloud centres are saturated,and thus fail the whiteness and haze tests
+    # However, some cloud centres are saturated, and thus fail the whiteness and haze tests
     if hasattr(inputs, 'saturationMask'):
         saturatedVis = inputs.saturationMask[0] != 0
         veryBright = (meanVis > 0.45)
@@ -324,7 +338,10 @@ def potentialCloudFirstPass(info, inputs, outputs, otherargs):
     variabilityProbPcnt = variabilityProbPcnt.clip(BYTE_MIN, BYTE_MAX).astype(numpy.uint8)
     
     # Equation 20
-    snowmask = (ndsi > 0.15) & (bt < 3.8) & (ref[nir] > 0.11) & (ref[green] > 0.1)
+    # In two parts, in case we are missing thermal
+    snowmask = (ndsi > 0.15) & (ref[nir] > 0.11) & (ref[green] > 0.1)
+    if hasattr(inputs, 'thermal'):
+        snowmask = snowmask & (bt < 3.8)
     snowmask[nullmask] = False
     
     # Output the pcp and water test layers. 
@@ -332,9 +349,10 @@ def potentialCloudFirstPass(info, inputs, outputs, otherargs):
         nullmask, snowmask, refNullmask, thermNullmask])
     
     # Accumulate histograms of temperature for land and water separately
-    scaledBT = (bt + BT_OFFSET).clip(0, BT_HISTSIZE)
-    otherargs.waterBT_hist = accumHist(otherargs.waterBT_hist, scaledBT[clearSkyWater])
-    otherargs.clearLandBT_hist = accumHist(otherargs.clearLandBT_hist, scaledBT[clearLand])
+    if hasattr(inputs, 'thermal'):
+        scaledBT = (bt + BT_OFFSET).clip(0, BT_HISTSIZE)
+        otherargs.waterBT_hist = accumHist(otherargs.waterBT_hist, scaledBT[clearSkyWater])
+        otherargs.clearLandBT_hist = accumHist(otherargs.clearLandBT_hist, scaledBT[clearLand])
     scaledB4 = (ref[nir] * B4_SCALE).astype(numpy.uint8)
     otherargs.clearLandB4_hist = accumHist(otherargs.clearLandB4_hist, scaledB4[clearLand])
 
@@ -437,14 +455,21 @@ def potentialCloudSecondPass(info, inputs, outputs, otherargs):
     ref = inputs.toaref.astype(numpy.float) / 1000.0
     # Clamp off any reflectance <= 0
     ref[ref<=0] = 0.00001
-    # Brightness temperature in degrees C
-    bt = otherargs.thermalInfo.scaleThermalDNtoC(inputs.thermal)
+    if hasattr(inputs, 'thermal'):
+        # Brightness temperature in degrees C
+        bt = otherargs.thermalInfo.scaleThermalDNtoC(inputs.thermal)
+        
     Twater = otherargs.Twater
     (Tlow, Thigh) = (otherargs.Tlow, otherargs.Thigh)
     # Values from first pass
     clearLand = inputs.pass1[2].astype(numpy.bool)
     variabilityProbPcnt = inputs.pass1[3]
     variability_prob = variabilityProbPcnt / PROB_SCALE
+    
+    # Cirrus band. From Zhu et al 2015, equation 1
+    if config.BAND_CIRRUS in otherargs.refBands:
+        cirrus = otherargs.refBands[config.BAND_CIRRUS]
+        cirrusProb = ref[cirrus] / 0.04
 
     # Equation 9
     if Twater is not None:
@@ -459,6 +484,9 @@ def potentialCloudSecondPass(info, inputs, outputs, otherargs):
     
     # Equation 11
     wCloud_prob = wTemperature_prob * brightness_prob
+    # Zhu et al 2015, equation 2
+    if config.BAND_CIRRUS in otherargs.refBands:
+        wCloud_prob += cirrusProb
     
     # Equation 14
     if Thigh is not None and Tlow is not None:
@@ -469,6 +497,8 @@ def potentialCloudSecondPass(info, inputs, outputs, otherargs):
     
     # Equation 16
     lCloud_prob = lTemperature_prob * variability_prob
+    if config.BAND_CIRRUS in otherargs.refBands:
+        lCloud_prob += cirrusProb
     
     outstack = numpy.array([
         (wCloud_prob * PROB_SCALE).clip(BYTE_MIN, BYTE_MAX), 
@@ -527,8 +557,10 @@ def cloudFinalPass(info, inputs, outputs, otherargs):
     notWater[nullmask] = False
     wCloud_prob = inputs.pass2[0] / PROB_SCALE
     lCloud_prob = inputs.pass2[1] / PROB_SCALE
-    # Brightness temperature in degrees C
-    bt = otherargs.thermalInfo.scaleThermalDNtoC(inputs.thermal)
+    if hasattr(inputs, 'thermal'):
+        # Brightness temperature in degrees C
+        bt = otherargs.thermalInfo.scaleThermalDNtoC(inputs.thermal)
+        
     landThreshold = otherargs.landThreshold
     Tlow = otherargs.Tlow
     
@@ -538,8 +570,8 @@ def cloudFinalPass(info, inputs, outputs, otherargs):
     if Tlow is not None:
         cloudmask4 = (bt < (Tlow-35))
     else:
-        # Not enough land for final test
-        cloudmask4 = True
+        # Not enough land for final test. Also come here when missing thermal.
+        cloudmask4 = numpy.zeros(cloudmask1.shape, dtype=numpy.bool)
         
     # Equation 18
     cloudmask = cloudmask1 | cloudmask2 | cloudmask3 | cloudmask4
@@ -669,35 +701,37 @@ def cloudShapeFunc(info, inputs, outputs, otherargs):
     cloudShape = numpy.zeros(bt.shape, dtype=numpy.uint8)
     cloudBaseTemp = {}
     
-    cloudIDlist = otherargs.cloudClumpNdx.values
-    for cloudID in cloudIDlist:
-        cloudNdx = otherargs.cloudClumpNdx.getIndexes(cloudID)
-        btCloud = bt[cloudNdx]
+    # If we are missing the thermal, then the clouds are flat 2-d shapes.
+    if hasattr(inputs, 'thermal'):
+        cloudIDlist = otherargs.cloudClumpNdx.values
+        for cloudID in cloudIDlist:
+            cloudNdx = otherargs.cloudClumpNdx.getIndexes(cloudID)
+            btCloud = bt[cloudNdx]
         
-        numPixInCloud = len(cloudNdx[0])
+            numPixInCloud = len(cloudNdx[0])
         
-        # Equation 22, in several pieces
-        R = numpy.sqrt(numPixInCloud/(2*numpy.pi))
-        if R >= 8:
-            percentile = 100.0 * (R-8.0)**2 / (R**2)
-            Tcloudbase = scipy.stats.scoreatpercentile(btCloud, percentile)
-        else:
-            Tcloudbase = btCloud.min()
+            # Equation 22, in several pieces
+            R = numpy.sqrt(numPixInCloud/(2*numpy.pi))
+            if R >= 8:
+                percentile = 100.0 * (R-8.0)**2 / (R**2)
+                Tcloudbase = scipy.stats.scoreatpercentile(btCloud, percentile)
+            else:
+                Tcloudbase = btCloud.min()
         
-        # Equation 23
-        btCloud[btCloud>Tcloudbase] = Tcloudbase
+            # Equation 23
+            btCloud[btCloud>Tcloudbase] = Tcloudbase
         
-        # Equation 24 (relative to cloud base). 
-        # N.B. Equation given in paper appears to be wrong, it multiplies by lapse
-        # rate instead of dividing by it. 
-        LAPSE_RATE_WET = 6.5        # degrees/km
-        Htop_relative = (Tcloudbase - btCloud) / LAPSE_RATE_WET
+            # Equation 24 (relative to cloud base). 
+            # N.B. Equation given in paper appears to be wrong, it multiplies by lapse
+            # rate instead of dividing by it. 
+            LAPSE_RATE_WET = 6.5        # degrees/km
+            Htop_relative = (Tcloudbase - btCloud) / LAPSE_RATE_WET
         
-        # Put this back into the cloudShape array at the right place
-        cloudShape[cloudNdx] = numpy.round(Htop_relative * CLOUD_HEIGHT_SCALE).astype(numpy.uint8)
+            # Put this back into the cloudShape array at the right place
+            cloudShape[cloudNdx] = numpy.round(Htop_relative * CLOUD_HEIGHT_SCALE).astype(numpy.uint8)
         
-        # Save the Tcloudbase for this cloudID
-        cloudBaseTemp[cloudID] = Tcloudbase
+            # Save the Tcloudbase for this cloudID
+            cloudBaseTemp[cloudID] = Tcloudbase
     
     otherargs.cloudShape = cloudShape
     otherargs.cloudBaseTemp = cloudBaseTemp
@@ -894,7 +928,10 @@ def matchShadows(fmaskConfig, interimCloudmask, potentialShadowsFile,
     cloudIDlist = shadowShapesDict.keys()
     for cloudID in cloudIDlist:
         shadowEntry = shadowShapesDict[cloudID]
-        Tcloudbase = cloudBaseTemp[cloudID]
+        if cloudID in cloudBaseTemp:
+            Tcloudbase = cloudBaseTemp[cloudID]
+        else:
+            Tcloudbase = 0
 
         matchedShadowNdx = matchOneShadow(cloudmask, shadowEntry, potentialShadow, Tcloudbase, 
             Tlow, Thigh, xRes, yRes, cloudID, nullmask)
@@ -1100,7 +1137,7 @@ def maskAndBuffer(info, inputs, outputs, otherargs):
     nullmask = inputs.pass1[4].astype(numpy.bool)
     refNullmask = inputs.pass1[6].astype(numpy.bool)
     thermNullmask = inputs.pass1[7].astype(numpy.bool)
-    resetNullmask = (refNullmask | thermNullmask)
+    resetNullmask = nullmask
 
     cloud = inputs.cloud[0].astype(numpy.bool)
     shadow = inputs.shadow[0].astype(numpy.bool)

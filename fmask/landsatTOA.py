@@ -1,5 +1,8 @@
 #!/usr/bin/env python
-
+"""
+Module that handles convertion of scaled radiance (DN) 
+values from USGS to Top of Atmosphere (TOA) reflectane (*1000).
+"""
 # This file is part of 'python-fmask' - a cloud masking module
 # Copyright (C) 2015  Neil Flood
 #
@@ -25,7 +28,7 @@ from . import fmask
 from . import config
 
 # Derived by Pete Bunting from 6S
-LANDSAT8_ESUN = [1876.61, 1970.03, 1848.9, 1571.3, 967.66, 245.73, 82.03]
+LANDSAT8_ESUN = [1876.61, 1970.03, 1848.9, 1571.3, 967.66, 245.73, 82.03, 361.72]
 # From Chander, G., Markham, B.L., Helder, D.L. (2008)
 # Summary of current radiometric calibration coefficients for Landsat MSS, TM, ETM+, and EO-1 ALI sensors
 # http://landsathandbook.gsfc.nasa.gov/pdfs/Landsat_Calibration_Summary_RSE.pdf
@@ -90,6 +93,9 @@ def riosTOA(info, inputs, outputs, otherinputs):
     nbands = inputs.infile.shape[0]
 
     infile = inputs.infile.astype(numpy.float)
+    inIgnore = info.getNoDataValueFor(inputs.infile)
+    if inIgnore is None:
+        inIgnore = 0
 
     toaRefList = []
     for band in range(nbands):
@@ -99,7 +105,7 @@ def riosTOA(info, inputs, outputs, otherinputs):
         # clip to a sensible range
         numpy.clip(p, -0.2, 2.0, out=p)
         # mask out where zero in input
-        p[infile[band] == 0] = 0
+        p[infile[band] == inIgnore] = 0
 
         toaRefList.append(p)
 
@@ -119,6 +125,13 @@ def makeTOAReflectance(infile, mtlFile, outfile):
     L = image pixel (radiance)
     E = exoatmospheric irradiance for the band, and 
     theta = solar zenith angle.
+    
+    Assumes infile is radiance values in DN from USGS.
+    mtlFile is the .mtl file.
+    outfile will be created in the default format that RIOS
+    is configured to use and will be top of atmosphere 
+    reflectance values *1000.
+    
     """
     mtlInfo = config.readMTLFile(mtlFile)
     spaceCraft = mtlInfo['SPACECRAFT_ID']
@@ -143,6 +156,7 @@ def makeTOAReflectance(infile, mtlFile, outfile):
 
     controls = applier.ApplierControls()
     controls.progress = cuiprogress.GDALProgressBar()
+    controls.setStatsIgnore(0)
     
     applier.apply(riosTOA, inputs, outputs, otherinputs, controls=controls)
 
