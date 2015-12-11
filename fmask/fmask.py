@@ -311,7 +311,7 @@ def potentialCloudFirstPass(info, inputs, outputs, otherargs):
     # This is an extra saturation test added by DERM, and is not part of the Fmask algorithm. 
     # However, some cloud centres are saturated, and thus fail the whiteness and haze tests
     if hasattr(inputs, 'saturationMask'):
-        saturatedVis = inputs.saturationMask[0] != 0
+        saturatedVis = (inputs.saturationMask != 0).any(axis=0)
         veryBright = (meanVis > 0.45)
         saturatedAndBright = saturatedVis & veryBright
         pcp[saturatedAndBright] = True
@@ -330,8 +330,8 @@ def potentialCloudFirstPass(info, inputs, outputs, otherargs):
     # Equation 15
     # Need to modify ndvi/ndsi by saturation......
     if hasattr(inputs, 'saturationMask'):
-        modNdvi = numpy.where(saturatedVis, 0, ndvi)
-        modNdsi = numpy.where(saturatedVis, 0, ndsi)
+        modNdvi = numpy.where((inputs.saturationMask[green] != 0), 0, ndvi)
+        modNdsi = numpy.where((inputs.saturationMask[red] != 0), 0, ndsi)
     else:
         modNdvi = ndvi
         modNdsi = ndsi
