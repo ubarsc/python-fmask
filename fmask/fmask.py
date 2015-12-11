@@ -208,6 +208,7 @@ def doPotentialCloudFirstPass(fmaskFilenames, fmaskConfig, missingThermal):
     otherargs.waterBT_hist = numpy.zeros(BT_HISTSIZE, dtype=numpy.uint32)
     otherargs.clearLandBT_hist = numpy.zeros(BT_HISTSIZE, dtype=numpy.uint32)
     otherargs.clearLandB4_hist = numpy.zeros(BT_HISTSIZE, dtype=numpy.uint32)
+    otherargs.fmaskConfig = fmaskConfig
 
     applier.apply(potentialCloudFirstPass, infiles, outfiles, otherargs, controls=controls)
     
@@ -235,6 +236,8 @@ def potentialCloudFirstPass(info, inputs, outputs, otherargs):
     # Clamp off any reflectance <= 0
     ref[ref<=0] = 0.00001
 
+    fmaskConfig = otherargs.fmaskConfig
+
     # Extract the bands we need
     blue = otherargs.refBands[config.BAND_BLUE]
     green = otherargs.refBands[config.BAND_GREEN]
@@ -261,17 +264,17 @@ def potentialCloudFirstPass(info, inputs, outputs, otherargs):
     ndsi = (ref[green] - ref[swir1]) / (ref[green] + ref[swir1])
     ndvi = (ref[nir] - ref[red]) / (ref[nir] + ref[red])
     # In two parts, in case we have no thermal.
-    basicTest = (ref[swir2] > 0.03) & (ndsi < 0.8) & (ndvi < 0.8)
+    basicTest = (ref[swir2] > fmaskConfig.Eqn1Swir2Thresh) & (ndsi < 0.8) & (ndvi < 0.8)
     if hasattr(inputs, 'thermal'):
-        basicTest = (basicTest & (bt < 27))
+        basicTest = (basicTest & (bt < fmaskConfig.Eqn1ThermThresh))
     
     # Equation 2
     meanVis = (ref[blue] + ref[green] + ref[red]) / 3.0
     whiteness = numpy.zeros(ref[0].shape)
     for n in [blue, green, red]:
         whiteness = whiteness + numpy.absolute((ref[n] - meanVis) / meanVis)
-    # TODO: config for 0.7
-    whitenessTest = (whiteness < 0.7)
+
+    whitenessTest = (whiteness < fmaskConfig.Eqn2WhitenessThresh)
     
     # Haze test, equation 3
     hazeTest = ((ref[blue] - 0.5 * ref[red] - 0.08) > 0)
@@ -290,7 +293,7 @@ def potentialCloudFirstPass(info, inputs, outputs, otherargs):
     if config.BAND_CIRRUS in otherargs.refBands:
         # Zhu et al 2015, section 2.2.1. 
         cirrus = otherargs.refBands[config.BAND_CIRRUS]
-        cirrusBandTest = (ref[cirrus] > 0.01)
+        cirrusBandTest = (ref[cirrus] > fmaskConfig.cirrusBandTestThresh)
     
     # Equation 6. Potential cloud pixels (first pass)
     pcp = basicTest & whitenessTest & hazeTest & b45test
@@ -313,7 +316,7 @@ def potentialCloudFirstPass(info, inputs, outputs, otherargs):
     pcp[nullmask] = False
     
     # Equation 7
-    clearSkyWater = numpy.logical_and(waterTest, ref[swir2] < 0.03)
+    clearSkyWater = numpy.logical_and(waterTest, ref[swir2] < fmaskConfig.Eqn7Swir2Thresh)
     clearSkyWater[nullmask] = False
     
     # Equation 12
@@ -341,7 +344,7 @@ def potentialCloudFirstPass(info, inputs, outputs, otherargs):
     # In two parts, in case we are missing thermal
     snowmask = (ndsi > 0.15) & (ref[nir] > 0.11) & (ref[green] > 0.1)
     if hasattr(inputs, 'thermal'):
-        snowmask = snowmask & (bt < 3.8)
+        snowmask = snowmask & (bt < fmaskConfig.Eqn20ThermThresh)
     snowmask[nullmask] = False
     
     # Output the pcp and water test layers. 
@@ -429,6 +432,7 @@ def doPotentialCloudSecondPass(fmaskFilenames, fmaskConfig, pass1file,
     otherargs.Tlow = Tlow
     otherargs.Thigh = Thigh
     otherargs.lCloudProb_hist = numpy.zeros(BT_HISTSIZE, dtype=numpy.uint32)
+    otherargs.fmaskConfig = fmaskConfig
     
     controls.setWindowXsize(RIOS_WINDOW_SIZE)
     controls.setWindowYsize(RIOS_WINDOW_SIZE)
@@ -455,6 +459,9 @@ def potentialCloudSecondPass(info, inputs, outputs, otherargs):
     ref = inputs.toaref.astype(numpy.float) / 1000.0
     # Clamp off any reflectance <= 0
     ref[ref<=0] = 0.00001
+    
+    fmaskConfig = otherargs.fmaskConfig
+    
     if hasattr(inputs, 'thermal'):
         # Brightness temperature in degrees C
         bt = otherargs.thermalInfo.scaleThermalDNtoC(inputs.thermal)
@@ -469,7 +476,7 @@ def potentialCloudSecondPass(info, inputs, outputs, otherargs):
     # Cirrus band. From Zhu et al 2015, equation 1
     if config.BAND_CIRRUS in otherargs.refBands:
         cirrus = otherargs.refBands[config.BAND_CIRRUS]
-        cirrusProb = ref[cirrus] / 0.04
+        cirrusProb = ref[cirrus] / fmaskConfig.cirrusProbRatio
 
     # Equation 9
     if Twater is not None:
@@ -611,7 +618,7 @@ def doPotentialShadows(fmaskFilenames, fmaskConfig, NIR_17):
     del scaledNIR, scaledNIR_filled
     
     # Equation 19
-    potentialShadows = ((NIR_filled - NIR) > 0.02)
+    potentialShadows = ((NIR_filled - NIR) > fmaskConfig.Eqn19NIRFillThresh)
     
     driver = gdal.GetDriverByName(applier.DEFAULTDRIVERNAME)
     outds = driver.Create(potentialShadowsFile, ds.RasterXSize, ds.RasterYSize, 

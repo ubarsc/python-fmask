@@ -58,6 +58,25 @@ class FmaskConfig(object):
     Class that contains the configuration parameters of the fmask
     run.
     """
+    # some parameters for fmask operation
+    keepIntermediates = False
+    cloudBufferSize = 5
+    shadowBufferSize = 10
+    verbose = False
+    strictFmask = False
+    tempDir = '.'
+        
+    # constants from the paper that could probably be tweaked
+    # equation numbers are from the original paper.
+    Eqn1Swir2Thresh = 0.03
+    Eqn1ThermThresh = 27
+    Eqn2WhitenessThresh = 0.7
+    cirrusBandTestThresh = 0.01
+    Eqn7Swir2Thresh = 0.03
+    Eqn20ThermThresh = 3.8
+    cirrusProbRatio = 0.04
+    Eqn19NIRFillThresh = 0.02
+    
     def __init__(self, sensor):
         """
         Pass in the sensor (one of: FMASK_LANDSAT47, FMASK_LANDSAT8 or
@@ -102,14 +121,6 @@ class FmaskConfig(object):
         else:
             self.defaultExtension = '.' + ext
         
-        # some parameters for fmask operation
-        self.keepIntermediates = False
-        self.cloudBufferSize = 5
-        self.shadowBufferSize = 10
-        self.verbose = False
-        self.strictFmask = False
-        self.tempDir = '.'
-    
     def setReflectiveBand(self, band, index):
         """
         Tell fmask which band is in which index in the reflectance
@@ -199,11 +210,82 @@ class FmaskConfig(object):
         
         """
         self.defaultExtension = extension
+        
+    def setEqn1Swir2Thresh(self, thresh):
+        """
+        Change the threshold used by Equation 1 for the SWIR2 band.
+        This defaults to 0.03
+        
+        """
+        self.Eqn1Swir2Thresh = thresh
+        
+    def setEqn1ThermThresh(self, thresh):
+        """
+        Change the threshold used by Equation one for BT.
+        This defaults to 27.
+        
+        """
+        self.Eqn1ThermThresh = thresh
+        
+    def setEqn2WhitenessThresh(self, thresh):
+        """
+        Change the threshold used by Equation 2 to determine
+        whiteness from visible bands. This defaults to 0.7.
+        
+        """
+        self.Eqn2WhitenessThresh = thresh
+        
+    def setCirrusBandTestThresh(self, thresh):
+        """
+        Change the threshold used by Zhu et al 2015, section 2.2.1
+        for the cirrus band test. Defaults to 0.01.
+        
+        """
+        self.cirrusBandTestThresh = thresh
+        
+    def setEqn7Swir2Thresh(self, thresh):
+        """
+        Change the threshold used by Equation 7 (water test)
+        for the Swir2 band. This defaults to 0.03.
+        
+        """
+        self.Eqn7Swir2Thresh = thresh
+        
+    def setEqn20ThermThresh(self, thresh):
+        """
+        Change the threshold used by Equation 20 (snow)
+        for BT. This defaults to 3.8.
+        
+        """
+        self.Eqn20ThermThresh = thresh
+        
+    def setCirrusProbRatio(self, ratio):
+        """
+        Change the ratio used by Zhu et al 2015 Equation 1
+        to determine the cirrus cloud probability. Defaults
+        to 0.04.
+        
+        """
+        self.cirrusProbRatio = ratio
+        
+    def setEqn19NIRFillThresh(self, thresh):
+        """
+        Change the threshold used by Equation 19 to determine
+        potential cloud shadow from the difference between NIR
+        and flood filled NIR. Defaults to 0.02.
+        
+        """
+        self.Eqn19NIRFillThresh = thresh
 
 class FmaskFilenames(object):
     """
     Class that contains the filenames used in the fmask run.
     """
+    toaRef = None
+    thermal = None
+    saturationMask = None
+    outputMask = None
+    
     def __init__(self, toaRefFile=None, thermalFile=None, outputMask=None,
                 saturationMask=None):
         self.toaRef = toaRefFile
