@@ -245,7 +245,8 @@ def potentialCloudFirstPass(info, inputs, outputs, otherargs):
     nir = otherargs.refBands[config.BAND_NIR]
     swir1 = otherargs.refBands[config.BAND_SWIR1]
     swir2 = otherargs.refBands[config.BAND_SWIR2]
-    THERM = otherargs.thermalInfo.thermalBand1040um
+    if hasattr(inputs, 'thermal'):
+        THERM = otherargs.thermalInfo.thermalBand1040um
     
     refNull = info.getNoDataValueFor(inputs.toaref)
     if refNull is None:
@@ -425,7 +426,8 @@ def doPotentialCloudSecondPass(fmaskFilenames, fmaskConfig, pass1file,
     
     infiles.pass1 = pass1file
     infiles.toaref = fmaskFilenames.toaRef
-    infiles.thermal = fmaskFilenames.thermal
+    if fmaskFilenames.thermal is not None:
+        infiles.thermal = fmaskFilenames.thermal
     (fd, outfiles.pass2) = tempfile.mkstemp(prefix='pass2', dir=fmaskConfig.tempDir, 
                                     suffix=fmaskConfig.defaultExtension)
     os.close(fd)
@@ -533,7 +535,8 @@ def doCloudLayerFinalPass(fmaskFilenames, fmaskConfig, pass1file, pass2file,
     
     infiles.pass1 = pass1file
     infiles.pass2 = pass2file
-    infiles.thermal = fmaskFilenames.thermal
+    if fmaskFilenames.thermal is not None:
+        infiles.thermal = fmaskFilenames.thermal
     otherargs.landThreshold = landThreshold
     otherargs.Tlow = Tlow
     otherargs.thermalInfo = fmaskConfig.thermalInfo
@@ -612,7 +615,10 @@ def doPotentialShadows(fmaskFilenames, fmaskConfig, NIR_17):
     ds = gdal.Open(fmaskFilenames.toaRef)
     band = ds.GetRasterBand(NIR_lyr)
     nullval = band.GetNoDataValue()
-    scaledNIR = band.ReadAsArray()
+    if nullval is None:
+        nullval = 0
+    # Sentinel2 is uint16 which causes problems...
+    scaledNIR = band.ReadAsArray().astype(numpy.int16)
     NIR_17_dn = NIR_17 * 1000
     
     scaledNIR_filled = fillminima.fillMinima(scaledNIR, nullval, NIR_17_dn)
