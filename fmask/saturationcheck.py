@@ -69,7 +69,7 @@ def riosSaturationMask(info, inputs, outputs, otherargs):
     not to be true, we can come back to this. 
     
     """
-    if otherargs.radianceBands.dtype == numpy.uint8:
+    if inputs.radiance.dtype == numpy.uint8:
         blue = otherargs.radianceBands[config.BAND_BLUE]
         green = otherargs.radianceBands[config.BAND_GREEN]
         red = otherargs.radianceBands[config.BAND_RED]
@@ -85,6 +85,6 @@ def riosSaturationMask(info, inputs, outputs, otherargs):
         outputs.mask = numpy.expand_dims(outputs.mask, axis=0)
     else:
         # Assume that anything larger than 8-bit is immune to saturation
-        outShape = (1, ) + inputs.radianceBands[0].shape
+        outShape = (1, ) + inputs.radiance[0].shape
         outputs.mask = numpy.zeros(outShape, dtype=numpy.uint8)
     
