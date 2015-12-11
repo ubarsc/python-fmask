@@ -248,10 +248,14 @@ def potentialCloudFirstPass(info, inputs, outputs, otherargs):
     THERM = otherargs.thermalInfo.thermalBand1040um
     
     refNull = info.getNoDataValueFor(inputs.toaref)
+    if refNull is None:
+        refNull = 0
     # Special mask needed only for resets in final pass
     refNullmask = (inputs.toaref[blue] == refNull)
     if hasattr(inputs, 'thermal'):
         thermalNull = info.getNoDataValueFor(inputs.thermal)
+        if thermalNull is None:
+            thermalNull = 0
         thermNullmask = (inputs.thermal[THERM] == thermalNull)
         nullmask = (refNullmask | thermNullmask)
         # Brightness temperature in degrees C
