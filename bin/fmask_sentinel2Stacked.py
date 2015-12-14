@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-Script that takes a stacked Sentinel 2 image and runs
+Script that takes a stacked Sentinel 2 Level 1C image and runs
 fmask on it.
 """
 # This file is part of 'python-fmask' - a cloud masking module
@@ -24,6 +24,7 @@ from __future__ import print_function, division
 
 import sys
 import optparse
+import numpy
 from xml.dom import minidom
 from fmask import fmask
 from fmask import config
@@ -60,12 +61,31 @@ def getMeanSunAngles(xmlFile):
     
     """
     xmldoc = minidom.parse(xmlFile)
+    # do the sun angles
     itemList = xmldoc.getElementsByTagName('Mean_Sun_Angle')
     zenList = itemList[0].getElementsByTagName('ZENITH_ANGLE')
-    zenith = float(zenList[0].firstChild.data)
+    sunZenith = float(zenList[0].firstChild.data)
     aziList = itemList[0].getElementsByTagName('AZIMUTH_ANGLE')
-    azimuth = float(aziList[0].firstChild.data)
-    return config.AngleConstantInfo(zenith, azimuth, 0, 0)
+    sunAzimuth = float(aziList[0].firstChild.data)
+    
+    # view angles
+    bandList = xmldoc.getElementsByTagName('Mean_Viewing_Incidence_Angle_List')
+    # just choose first band in list. The values are all a bit different
+    # not sure if this matters or not
+    itemList = bandList[0].getElementsByTagName('Mean_Viewing_Incidence_Angle')
+    zenList = itemList[0].getElementsByTagName('ZENITH_ANGLE')
+    viewZenith = float(zenList[0].firstChild.data)
+    aziList = itemList[0].getElementsByTagName('AZIMUTH_ANGLE')
+    viewAzimuth = float(aziList[0].firstChild.data)
+    
+    sunZenith = numpy.radians(sunZenith)
+    sunAzimuth = numpy.radians(sunAzimuth)
+    viewZenith = numpy.radians(viewZenith)
+    viewAzimuth = numpy.radians(viewAzimuth)
+    
+    anglesInfo = config.AngleConstantInfo(sunZenith, sunAzimuth, 
+                    viewZenith, viewAzimuth)
+    return anglesInfo
             
 def mainRoutine():
     """
@@ -83,6 +103,7 @@ def mainRoutine():
     fmaskConfig.setAnglesInfo(anglesInfo)
     fmaskConfig.setKeepIntermediates(cmdargs.keepintermediates)
     fmaskConfig.setVerbose(cmdargs.verbose)
+    fmaskConfig.setTOARefScaling(10000.0)
     
     fmask.doFmask(fmaskFilenames, fmaskConfig)
     

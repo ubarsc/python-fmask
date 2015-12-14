@@ -232,11 +232,11 @@ def potentialCloudFirstPass(info, inputs, outputs, otherargs):
     Calculate the first pass potential cloud layer (equation 6)
         
     """
-    ref = inputs.toaref.astype(numpy.float) / 1000.0
+    fmaskConfig = otherargs.fmaskConfig
+
+    ref = inputs.toaref.astype(numpy.float) / fmaskConfig.TOARefScaling
     # Clamp off any reflectance <= 0
     ref[ref<=0] = 0.00001
-
-    fmaskConfig = otherargs.fmaskConfig
 
     # Extract the bands we need
     blue = otherargs.refBands[config.BAND_BLUE]
@@ -462,11 +462,11 @@ def potentialCloudSecondPass(info, inputs, outputs, otherargs):
     
     Second pass of potential cloud layer
     """
-    ref = inputs.toaref.astype(numpy.float) / 1000.0
+    fmaskConfig = otherargs.fmaskConfig
+    
+    ref = inputs.toaref.astype(numpy.float) / fmaskConfig.TOARefScaling
     # Clamp off any reflectance <= 0
     ref[ref<=0] = 0.00001
-    
-    fmaskConfig = otherargs.fmaskConfig
     
     if hasattr(inputs, 'thermal'):
         # Brightness temperature in degrees C
@@ -619,12 +619,12 @@ def doPotentialShadows(fmaskFilenames, fmaskConfig, NIR_17):
         nullval = 0
     # Sentinel2 is uint16 which causes problems...
     scaledNIR = band.ReadAsArray().astype(numpy.int16)
-    NIR_17_dn = NIR_17 * 1000
+    NIR_17_dn = NIR_17 * fmaskConfig.TOARefScaling
     
     scaledNIR_filled = fillminima.fillMinima(scaledNIR, nullval, NIR_17_dn)
 
-    NIR = scaledNIR.astype(numpy.float) / 1000.0
-    NIR_filled = scaledNIR_filled.astype(numpy.float) / 1000.0
+    NIR = scaledNIR.astype(numpy.float) / fmaskConfig.TOARefScaling
+    NIR_filled = scaledNIR_filled.astype(numpy.float) / fmaskConfig.TOARefScaling
     del scaledNIR, scaledNIR_filled
     
     # Equation 19
@@ -682,7 +682,13 @@ def make3Dclouds(fmaskFilenames, fmaskConfig, clumps, numClumps):
     otherargs = applier.OtherInputs()
     controls = applier.ApplierControls()
     
-    infiles.thermal = fmaskFilenames.thermal
+    # if we have thermal, run against that 
+    # otherwise we are just 
+    if fmaskFilenames.thermal is not None:
+        infiles.thermal = fmaskFilenames.thermal
+    else:
+        infiles.toaRef = fmaskFilenames.toaRef
+        
     otherargs.clumps = clumps
     otherargs.cloudClumpNdx = valueindexes.ValueIndexes(clumps, nullVals=[0])
     otherargs.numClumps = numClumps
@@ -713,13 +719,14 @@ def cloudShapeFunc(info, inputs, outputs, otherargs):
     output files, as they would just be read in again as whole arrays immediately. 
     
     """
-    bt = otherargs.thermalInfo.scaleThermalDNtoC(inputs.thermal)
     
-    cloudShape = numpy.zeros(bt.shape, dtype=numpy.uint8)
     cloudBaseTemp = {}
     
     # If we are missing the thermal, then the clouds are flat 2-d shapes.
     if hasattr(inputs, 'thermal'):
+        bt = otherargs.thermalInfo.scaleThermalDNtoC(inputs.thermal)
+        cloudShape = numpy.zeros(bt.shape, dtype=numpy.uint8)
+        
         cloudIDlist = otherargs.cloudClumpNdx.values
         for cloudID in cloudIDlist:
             cloudNdx = otherargs.cloudClumpNdx.getIndexes(cloudID)
@@ -749,6 +756,9 @@ def cloudShapeFunc(info, inputs, outputs, otherargs):
         
             # Save the Tcloudbase for this cloudID
             cloudBaseTemp[cloudID] = Tcloudbase
+    else:
+        # fake it
+        cloudShape = numpy.zeros(inputs.toaRef[0].shape, dtype=numpy.uint8)
     
     otherargs.cloudShape = cloudShape
     otherargs.cloudBaseTemp = cloudBaseTemp

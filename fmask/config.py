@@ -65,6 +65,7 @@ class FmaskConfig(object):
     verbose = False
     strictFmask = False
     tempDir = '.'
+    TOARefScaling = 1000.0
         
     # constants from the paper that could probably be tweaked
     # equation numbers are from the original paper.
@@ -155,6 +156,15 @@ class FmaskConfig(object):
 
         """
         self.anglesInfo = info
+        
+    def setTOARefScaling(self, scaling):
+        """
+        Set the scaling used in the Top of Atmosphere reflectance
+        image. DN's are divided by this number to get reflectance.
+        This defaults to 1000.0
+        
+        """
+        self.TOARefScaling = scaling
 
     def setKeepIntermediates(self, keepIntermediates):
         """
