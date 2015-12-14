@@ -66,6 +66,11 @@ from . import config
 from . import fmaskerrors
 # so we can check if thermal all zeroes
 from . import zerocheck
+
+"bands in the saturation mask, if supplied"
+SATURATION_BLUE = 0
+SATURATION_GREEN = 1
+SATURATION_RED = 2
     
 def doFmask(fmaskFilenames, fmaskConfig):
     """
@@ -331,8 +336,8 @@ def potentialCloudFirstPass(info, inputs, outputs, otherargs):
     # Equation 15
     # Need to modify ndvi/ndsi by saturation......
     if hasattr(inputs, 'saturationMask'):
-        modNdvi = numpy.where((inputs.saturationMask[green] != 0), 0, ndvi)
-        modNdsi = numpy.where((inputs.saturationMask[red] != 0), 0, ndsi)
+        modNdvi = numpy.where((inputs.saturationMask[SATURATION_GREEN] != 0), 0, ndvi)
+        modNdsi = numpy.where((inputs.saturationMask[SATURATION_RED] != 0), 0, ndsi)
     else:
         modNdvi = ndvi
         modNdsi = ndsi
