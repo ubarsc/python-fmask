@@ -28,30 +28,30 @@ from osgeo import gdal
 from rios import applier
 from . import fmaskerrors
 
-"Landsat 4 to 7"
 FMASK_LANDSAT47 = 0
-"Landsat 8"
+"Landsat 4 to 7"
 FMASK_LANDSAT8 = 1
-"Sentinel 2"
+"Landsat 8"
 FMASK_SENTINEL2 = 2
+"Sentinel 2"
 
 """
 Some constants for the various reflective bands used in fmask.
-~45um
 """
 BAND_BLUE = 0
-"~52um"
+"~45um"
 BAND_GREEN = 1
-"~63um"
+"~52um"
 BAND_RED = 2
-"~76um"
+"~63um"
 BAND_NIR = 3
-"~136um"
+"~76um"
 BAND_CIRRUS = 4 # Sentinel2 + Landsat8 only
-"~155um"
+"~136um"
 BAND_SWIR1 = 5
-"~208um"
+"~155um"
 BAND_SWIR2 = 6
+"~208um"
 
 class FmaskConfig(object):
     """

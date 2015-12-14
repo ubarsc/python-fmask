@@ -17,6 +17,7 @@
 
 from numpy.distutils.core import setup, Extension
 import glob
+import fmask
 
 fillminimaC = Extension(name='_fillminima', 
                 sources=['src/fillminima.c'])
@@ -25,7 +26,7 @@ valueIndexesC = Extension(name='_valueindexes',
 
 # do the setup
 setup( name = 'python-fmask',
-        version = '0.2',
+        version = fmask.__version__,
         description = 'Module to implement the fmask cloud masking algorithm (Zhu, Wang & Woodcock 2015)',
         author = 'Neil Flood',
         author_email = 'neil.flood@science.dsiti.qld.gov.au',
