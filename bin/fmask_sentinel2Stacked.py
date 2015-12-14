@@ -45,6 +45,8 @@ class CmdArgs(object):
             action='store_true', help='verbose output')
         self.parser.add_option('-k', '--keepintermediates', dest='keepintermediates', 
             default=False, action='store_true', help='verbose output')
+        self.parser.add_option('-e', '--tempdir', dest='tempdir',
+            default='.', help="Temp directory to use (default=%default)")
             
         (options, self.args) = self.parser.parse_args()
         self.__dict__.update(options.__dict__)
@@ -103,6 +105,7 @@ def mainRoutine():
     fmaskConfig.setAnglesInfo(anglesInfo)
     fmaskConfig.setKeepIntermediates(cmdargs.keepintermediates)
     fmaskConfig.setVerbose(cmdargs.verbose)
+    fmaskConfig.setTempDir(cmdargs.tempdir)
     fmaskConfig.setTOARefScaling(10000.0)
     
     fmask.doFmask(fmaskFilenames, fmaskConfig)
