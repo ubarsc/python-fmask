@@ -41,18 +41,21 @@ class ValueIndexes(object):
     it is possible to use numpy.digitize() to create an integer array 
     corresponding to a set of bins, and then use ValueIndexes with that. 
     
-    Example usage, for a given array a
+    Example usage, for a given array a::
+
         valIndexes = ValueIndexes(a)
         for val in valIndexes.values:
             ndx = valIndexes.getIndexes(val)
             # Do something with all the indexes
     
     
-    This is a much faster and more efficient alternative to something like
+    This is a much faster and more efficient alternative to something like::
+
         values = numpy.unique(a)
         for val in values:
             mask = (a == val)
             # Do something with the mask
+
     The point is that when a is large, and/or the number of possible values 
     is large, this becomes very slow, and can take up lots of memory. Each 
     loop iteration involves searching through a again, looking for a different 
@@ -66,20 +69,19 @@ class ValueIndexes(object):
     lot of nulls. 
     
     A ValueIndexes object has the following attributes:
-        values              Array of all values indexed
-        counts              Array of counts for each value
-        nDims               Number of dimensions of original array
-        indexes             Packed array of indexes
-        start               Starting points in indexes array for each value
-        end                 End points in indexes for each value
-        valLU               Lookup table for each value, to find it in 
-                            the values array without explicitly searching. 
-        nullVals            Array of the null values requested. 
+    * **values**            Array of all values indexed
+    * **counts**            Array of counts for each value
+    * **nDims**             Number of dimensions of original array
+    * **indexes**           Packed array of indexes
+    * **start**             Starting points in indexes array for each value
+    * **end**               End points in indexes for each value
+    * **valLU**             Lookup table for each value, to find it in the values array without explicitly searching. 
+    * **nullVals**          Array of the null values requested. 
     
-    Limtations:
-        The array index values are handled using unsigned 32bit int values, so 
-        it won't work if the data array is larger than 4Gb. I don't think it would
-        fail very gracefully, either. 
+    Limitations:
+    The array index values are handled using unsigned 32bit int values, so 
+    it won't work if the data array is larger than 4Gb. I don't think it would
+    fail very gracefully, either. 
     
     """
     def __init__(self, a, nullVals=[]):
