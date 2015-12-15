@@ -8,16 +8,17 @@ Introduction
 
 A set of command line utilities and Python modules that implement
 the 'fmask' algorithm as published in:
-    Zhu, Z. and Woodcock, C.E. (2012). 
-    Object-based cloud and cloud shadow detection in Landsat imagery
-    Remote Sensing of Environment 118 (2012) 83-94. 
+
+Zhu, Z. and Woodcock, C.E. (2012). 
+Object-based cloud and cloud shadow detection in Landsat imagery
+Remote Sensing of Environment 118 (2012) 83-94. 
     
-    and
+and
     
-    Zhu, Z., Wang, S. and Woodcock, C.E. (2015).
-    Improvement and expansion of the Fmask algorithm: cloud, cloud
-    shadow, and snow detection for Landsats 4-7, 8, and Sentinel 2 images
-    Remote Sensing of Environment 159 (2015) 269-277.
+Zhu, Z., Wang, S. and Woodcock, C.E. (2015).
+Improvement and expansion of the Fmask algorithm: cloud, cloud
+shadow, and snow detection for Landsats 4-7, 8, and Sentinel 2 images
+Remote Sensing of Environment 159 (2015) 269-277.
 
 Installation requires `Python <http://python.org/>`_, `numpy <http://www.numpy.org/>`_, `scipy <http://www.scipy.org/>`_,
 `GDAL <http://gdal.org/>`_ and `RIOS <http://rioshome.org/>`_.
@@ -54,7 +55,15 @@ Here is an example of how to to this::
 
 Downloads
 ---------
-From `Sourceforge <http://sourceforge.net/projects/pythonfmask/>`_ or `BitBucket <https://bitbucket.org/chchrsc/python-fmask/downloads>`_.
+From `Sourceforge <https://sourceforge.net/projects/pythonfmask/files/>`_ or `BitBucket <https://bitbucket.org/chchrsc/python-fmask/downloads>`_.
+
+`Conda <http://conda.pydata.org/miniconda.html#miniconda>`_ packages for linux64 (other platforms to follow) are available under the 'rios' channel.
+
+Issues
+------
+
+Please log bugs encountered with the `Issue Tracker <https://bitbucket.org/chchrsc/python-fmask/issues?status=new&status=open>`_.
+
 
 Python developer documentation
 ------------------------------

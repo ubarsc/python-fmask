@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 Module that handles convertion of scaled radiance (DN) 
-values from USGS to Top of Atmosphere (TOA) reflectane (*1000).
+values from USGS to Top of Atmosphere (TOA) reflectance (\*1000).
 """
 # This file is part of 'python-fmask' - a cloud masking module
 # Copyright (C) 2015  Neil Flood
@@ -121,7 +121,7 @@ def makeTOAReflectance(infile, mtlFile, outfile):
     The eqn for TOA reflectance, p, is
     p = pi * L * d^2 / E * cos(theta)
     
-    d = geodesy.earthSunDistance(date)
+    d = earthSunDistance(date)
     L = image pixel (radiance)
     E = exoatmospheric irradiance for the band, and 
     theta = solar zenith angle.
@@ -130,7 +130,7 @@ def makeTOAReflectance(infile, mtlFile, outfile):
     mtlFile is the .mtl file.
     outfile will be created in the default format that RIOS
     is configured to use and will be top of atmosphere 
-    reflectance values *1000.
+    reflectance values \*1000.
     
     """
     mtlInfo = config.readMTLFile(mtlFile)
