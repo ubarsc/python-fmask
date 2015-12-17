@@ -51,7 +51,7 @@ If the thermal band is empty (for Landsat8) then it is ignored.
 Sentinel2
 ^^^^^^^^^
 
-The command line scripts supplied can process a Sentinel2 level 1 granule from the image directory. 
+The command line scripts supplied can process a Sentinel2 Level C granule from the image directory. 
 Here is an example of how to to this::
 
     gdalbuildvrt -resolution lowest -separate allbands.vrt S2*_B0[1-9].jp2 S2*_B1[0-2].jp2
