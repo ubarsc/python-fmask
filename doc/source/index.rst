@@ -24,10 +24,13 @@ Installation requires `Python <http://python.org/>`_, `numpy <http://www.numpy.o
 `GDAL <http://gdal.org/>`_ and `RIOS <http://rioshome.org/>`_.
 It is licensed under GPL 3.
 
+Originally developed by Neil Flood at `DSITI <https://www.qld.gov.au/dsiti/>`_ 
+and additional work funded by `Landcare Research <http://www.landcareresearch.co.nz>`_.
+
 Command Line Examples
 ---------------------
 
-Please note that the output format used is defined by RIOS. This defaults to HFA (.img). 
+Please note that the output format used is defined by `RIOS <http://rioshome.org/>`_. This defaults to HFA (.img). 
 See `RIOS documentation <http://rioshome.org/rios_imagewriter.html#rios.imagewriter.setDefaultDriver>`_
 for more information and how to change this using environment variables.
 
@@ -43,11 +46,12 @@ example of how to to this::
     fmask_usgsLandsatTOA.py -i ref.img -m LE7*_MTL.txt -o toa.img
     fmask_usgsLandsatStacked.py -t thermal.img -a toa.img -m LE7*_MTL.txt -s saturationmask.img -o cloud.img 
 
+If the thermal band is empty (for Landsat8) then it is ignored.
 
 Sentinel2
 ^^^^^^^^^
 
-The command line scripts supplied can process a Sentinel2 granule from the image directory. 
+The command line scripts supplied can process a Sentinel2 level 1 granule from the image directory. 
 Here is an example of how to to this::
 
     gdalbuildvrt -resolution lowest -separate allbands.vrt S2*_B0[1-9].jp2 S2*_B1[0-2].jp2
