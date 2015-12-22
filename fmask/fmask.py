@@ -376,7 +376,8 @@ def accumHist(counts, vals):
     Accumulate the given values into the given (partial) counts
     """
     (valsHist, edges) = numpy.histogram(vals, bins=BT_HISTSIZE, range=(0, BT_HISTSIZE))
-    counts += valsHist
+    # some versions of numpy seem to give an error if dtypes don't match here
+    counts += valsHist.astype(counts.dtype)
     return counts
 
 
