@@ -38,13 +38,21 @@ USGS Landsat
 ^^^^^^^^^^^^
 
 The command line scripts supplied can process an untarred USGS Landsat scene. Here is an 
-example of how to to this::
+example of how to to this for Landsat 7::
 
     gdal_merge.py -separate -of HFA -co COMPRESSED=YES -o ref.img L*_B[1,2,3,4,5,7].TIF
     gdal_merge.py -separate -of HFA -co COMPRESSED=YES -o thermal.img L*_B6_VCID_?.TIF
     fmask_usgsLandsatSaturationMask.py -i ref.img -m LE7*_MTL.txt -o saturationmask.img
     fmask_usgsLandsatTOA.py -i ref.img -m LE7*_MTL.txt -o toa.img
     fmask_usgsLandsatStacked.py -t thermal.img -a toa.img -m LE7*_MTL.txt -s saturationmask.img -o cloud.img 
+
+Landsat 8::
+
+    gdal_merge.py -separate -of HFA -co COMPRESSED=YES -o ref.img LC8*_B[1-7,9].TIF
+    gdal_merge.py -separate -of HFA -co COMPRESSED=YES -o thermal.img LC8*_B1[0,1].TIF
+    fmask_usgsLandsatSaturationMask.py -i ref.img -m LC8*_MTL.txt -o saturationmask.img
+    fmask_usgsLandsatTOA.py -i ref.img -m LC8*_MTL.txt -o toa.img
+    fmask_usgsLandsatStacked.py -t thermal.img -a toa.img -m LC8*_MTL.txt -s saturationmask.img -o cloud.img -v
 
 If the thermal band is empty (for Landsat8) then it is ignored.
 
