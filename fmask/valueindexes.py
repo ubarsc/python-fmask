@@ -109,7 +109,7 @@ class ValueIndexes(object):
         maskedCounts = counts.copy()
         for val in self.nullVals:
             maskedCounts[binEdges[:-1]==val] = 0
-        self.values = binEdges[maskedCounts>0].astype(a.dtype)
+        self.values = binEdges[:-1][maskedCounts>0].astype(a.dtype)
         self.counts = maskedCounts[maskedCounts>0]
         
         # Allocate space to store all indexes
