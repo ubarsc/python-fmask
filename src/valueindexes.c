@@ -40,7 +40,7 @@ static struct ValueIndexesState _state;
 static PyObject *valueIndexes_valndxFunc(PyObject *self, PyObject *args)
 {
 PyArrayObject *pInput, *pIndexes, *pValLU, *pCurrentIdx;
-npy_int64 nMin, nMax, arrVal;
+npy_int64 nMin, nMax, arrVal = 0;
 int nDone = 0, nFound = 0, nDim, nType, j, m, i, idx;
 npy_intp *pDims, *pCurrIdx;
 
