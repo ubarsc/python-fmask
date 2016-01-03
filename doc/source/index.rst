@@ -34,25 +34,36 @@ Please note that the output format used is defined by `RIOS <http://rioshome.org
 See `RIOS documentation <http://rioshome.org/rios_imagewriter.html#rios.imagewriter.setDefaultDriver>`_
 for more information and how to change this using environment variables.
 
+**Note:** these examples are for use in a Unix/Linux shell. Windows users will have
+to expand the wildcards themselves.
+
 USGS Landsat
 ^^^^^^^^^^^^
 
-The command line scripts supplied can process an untarred USGS Landsat scene. Here is an 
-example of how to to this for Landsat 7::
+The command line scripts supplied can process an untarred USGS Landsat scene. Firstly,
+the reflective and thermal bands must be stacked separately. This needs to be done
+in a different manner depending on the sensor.
+
+Landsat 4&5::
+
+    gdal_merge.py -separate -of HFA -co COMPRESSED=YES -o ref.img L*_B[1,2,3,4,5,7].TIF
+    gdal_merge.py -separate -of HFA -co COMPRESSED=YES -o thermal.img L*_B6.TIF
+
+Landsat 7::
 
     gdal_merge.py -separate -of HFA -co COMPRESSED=YES -o ref.img L*_B[1,2,3,4,5,7].TIF
     gdal_merge.py -separate -of HFA -co COMPRESSED=YES -o thermal.img L*_B6_VCID_?.TIF
-    fmask_usgsLandsatSaturationMask.py -i ref.img -m LE7*_MTL.txt -o saturationmask.img
-    fmask_usgsLandsatTOA.py -i ref.img -m LE7*_MTL.txt -o toa.img
-    fmask_usgsLandsatStacked.py -t thermal.img -a toa.img -m LE7*_MTL.txt -s saturationmask.img -o cloud.img 
 
 Landsat 8::
 
     gdal_merge.py -separate -of HFA -co COMPRESSED=YES -o ref.img LC8*_B[1-7,9].TIF
     gdal_merge.py -separate -of HFA -co COMPRESSED=YES -o thermal.img LC8*_B1[0,1].TIF
-    fmask_usgsLandsatSaturationMask.py -i ref.img -m LC8*_MTL.txt -o saturationmask.img
-    fmask_usgsLandsatTOA.py -i ref.img -m LC8*_MTL.txt -o toa.img
-    fmask_usgsLandsatStacked.py -t thermal.img -a toa.img -m LC8*_MTL.txt -s saturationmask.img -o cloud.img -v
+
+Then mask and Top of Atmosphere reflectance must be calculated and finally the cloud mask itself::
+
+    fmask_usgsLandsatSaturationMask.py -i ref.img -m *_MTL.txt -o saturationmask.img
+    fmask_usgsLandsatTOA.py -i ref.img -m *_MTL.txt -o toa.img
+    fmask_usgsLandsatStacked.py -t thermal.img -a toa.img -m *_MTL.txt -s saturationmask.img -o cloud.img 
 
 If the thermal band is empty (for Landsat8) then it is ignored.
 
