@@ -21,7 +21,7 @@ shadow, and snow detection for Landsats 4-7, 8, and Sentinel 2 images
 Remote Sensing of Environment 159 (2015) 269-277.
 
 Installation requires `Python <http://python.org/>`_, `numpy <http://www.numpy.org/>`_, `scipy <http://www.scipy.org/>`_,
-`GDAL <http://gdal.org/>`_ and `RIOS <http://rioshome.org/>`_.
+`GDAL <http://gdal.org/>`_ and `RIOS <http://rioshome.org/>`_ and the ability to compile C extensions for Python.
 It is licensed under GPL 3.
 
 Originally developed by Neil Flood at `DSITI <https://www.qld.gov.au/dsiti/>`_ 
@@ -34,8 +34,9 @@ Please note that the output format used is defined by `RIOS <http://rioshome.org
 See `RIOS documentation <http://rioshome.org/rios_imagewriter.html#rios.imagewriter.setDefaultDriver>`_
 for more information and how to change this using environment variables.
 
-**Note:** these examples are for use in a Unix/Linux shell. Windows users will have
-to expand the wildcards themselves.
+**Note:** these examples are for use in a Unix/Linux shell so that the filename wildcards
+get expanded properly. Windows users should prefix these commands with "python PATH\\TO\\fmask_expandWildcards.py" where 
+PATH\\TO\\fmask_expandWildcards.py is the output of "where fmask_expandWildcards.py".
 
 USGS Landsat
 ^^^^^^^^^^^^
@@ -80,7 +81,7 @@ Downloads
 ---------
 From `Sourceforge <https://sourceforge.net/projects/pythonfmask/files/>`_ or `BitBucket <https://bitbucket.org/chchrsc/python-fmask/downloads>`_.
 
-`Conda <http://conda.pydata.org/miniconda.html#miniconda>`_ packages for linux64 (other platforms to follow) are available under the 'rios' channel.
+`Conda <http://conda.pydata.org/miniconda.html#miniconda>`_ packages for linux64 and win64 (other platforms to follow) are available under the 'rios' channel.
 
 Issues
 ------
