@@ -559,13 +559,13 @@ class AnglesFileInfo(AnglesInfo):
         Called when fmask is about to query this object for angles.
         """
         self.solarZenithData = self.readData(self.solarZenithFilename, 
-                                self.solarZenithFilename)
+                                self.solarZenithBand)
         self.solarAzimuthData = self.readData(self.solarAzimuthFilename, 
-                                self.solarAzimuthFilename)
+                                self.solarAzimuthBand)
         self.viewZenithData = self.readData(self.viewZenithFilename, 
-                                self.viewZenithFilename)
+                                self.viewZenithBand)
         self.viewAzimuthData = self.readData(self.viewAzimuthFilename, 
-                                self.viewAzimuthFilename)
+                                self.viewAzimuthBand)
         
     def releaseMemory(self):
         """
