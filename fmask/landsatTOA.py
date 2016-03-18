@@ -109,7 +109,7 @@ def riosTOA(info, inputs, outputs, otherinputs):
 
         toaRefList.append(p)
 
-    out = numpy.array(toaRefList) * 1000.0
+    out = numpy.array(toaRefList) * 10000.0
     # convert to int16 
     outputs.outfile = out.astype(numpy.int16)
 

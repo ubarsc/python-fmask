@@ -65,7 +65,7 @@ class FmaskConfig(object):
     verbose = False
     strictFmask = False
     tempDir = '.'
-    TOARefScaling = 1000.0
+    TOARefScaling = 10000.0
         
     # constants from the paper that could probably be tweaked
     # equation numbers are from the original paper.
