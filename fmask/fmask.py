@@ -68,7 +68,7 @@ from . import fmaskerrors
 # so we can check if thermal all zeroes
 from . import zerocheck
 
-"bands in the saturation mask, if supplied"
+#: bands in the saturation mask, if supplied
 SATURATION_BLUE = 0
 SATURATION_GREEN = 1
 SATURATION_RED = 2
@@ -173,15 +173,16 @@ def doFmask(fmaskFilenames, fmaskConfig):
     
     return retVal
 
-"An offset so we can scale BT(deg C) to the range 0-255, for use in histograms."
-BT_OFFSET = 176
+#: An offset so we can scale BT(deg C) to the range 0-255, for use in histograms.
+BT_OFFSET = 176    
+
 BT_HISTSIZE = 256
 BYTE_MIN = 0
 BYTE_MAX = 255
-"Gain to scale b4 reflectances to 0-255 for histograms"
+#: Gain to scale b4 reflectances to 0-255 for histograms
 B4_SCALE = 500.0
 
-"Global RIOS window size"
+#: Global RIOS window size
 RIOS_WINDOW_SIZE = 512
 
 def doPotentialCloudFirstPass(fmaskFilenames, fmaskConfig, missingThermal):
@@ -421,7 +422,7 @@ def calcBTthresholds(otherargs):
         Thigh = Thigh - BT_OFFSET
     return (Twater, Tlow, Thigh)
 
-# For scaling probability values so I can store them in 8 bits
+#: For scaling probability values so I can store them in 8 bits
 PROB_SCALE = 100.0
 
 def doPotentialCloudSecondPass(fmaskFilenames, fmaskConfig, pass1file, 
