@@ -256,7 +256,6 @@ def sunAnglesForExtent(imgInfo, mtlInfo):
     ])
     longDeg = pts[:, 0]
     latDeg = pts[:, 1]
-    latRad = numpy.radians(latDeg)
     
     # Date/time in UTC
     dateStr = mtlInfo['DATE_ACQUIRED']
@@ -267,11 +266,34 @@ def sunAnglesForExtent(imgInfo, mtlInfo):
     juldayYearEnd = (datetime.date(ymd[0], 12, 31) - datetime.date(ymd[0], 1, 1)).days + 1
     # Julian day as a proportion of the year
     jdp = julianDay / juldayYearEnd
-    jdpr = jdp * 2 * numpy.pi
     # Hour in UTC
     hms = [float(x) for x in timeStr.split(':')]
     hourGMT = hms[0] + hms[1] / 60.0 + hms[2] / 3600.0
     
+    (sunAz, sunZen) = sunAnglesForPoints(latDeg, longDeg, hourGMT, jdp)
+    
+    
+    sunAngles = numpy.vstack((sunAz, sunZen)).T
+    return sunAngles
+
+
+def sunAnglesForPoints(latDeg, longDeg, hourGMT, jdp):
+    """
+    Calculate sun azimuth and zenith for the given location(s), for the given 
+    time of year. jdp is the julian day as a proportion, ranging from 0 to 1, where
+    Jan 1 is 1.0/365 and Dec 31 is 1.0. 
+    Location is given in latitude/longitude, in degrees, and can be arrays to 
+    calculate for multiple locations. hourGMT is a decimal hour number giving the time
+    of day in GMT (i.e. UTC). 
+    
+    Return a tuple of (sunAz, sunZen). If latDeg and longDeg are arrays, then returned 
+    values will be arrays of the same shape. 
+     
+    """
+    latRad = numpy.radians(latDeg)
+    # Express jdp in radians
+    jdpr = jdp * 2 * numpy.pi
+
     # Now work out the solar position. This is copied from the 6S code, but 
     # is also documented in the 6S manual. The notation
     a = numpy.array([0.000075, 0.001868, 0.032077, 0.014615, 0.040849])
@@ -279,7 +301,7 @@ def sunAnglesForExtent(imgInfo, mtlInfo):
     localSolarDiff = (a[0] + a[1] * numpy.cos(jdpr) - a[2] * numpy.sin(jdpr) - 
         a[3] * numpy.cos(2*jdpr) - a[4] * numpy.sin(2*jdpr)) * 12 * 60 / numpy.pi
     trueSolarTime = meanSolarTime + localSolarDiff / 60 - 12.0
-    # As an angle
+    # Hour as an angle
     ah = trueSolarTime * numpy.radians(15)
     
     b = numpy.array([0.006918, 0.399912, 0.070257, 0.006758, 0.000907, 0.002697, 0.001480])
@@ -300,15 +322,14 @@ def sunAnglesForExtent(imgInfo, mtlInfo):
         numpy.sin(latRad) * numpy.cos(delta) * numpy.cos(ah)) / numpy.sin(sunZen)
     sunAzSW = numpy.arcsin(sinSunAzSW)
     sunAzSW = numpy.where(cosSunAzSW <= 0, numpy.pi - sunAzSW, sunAzSW)
-    sunAzSW = numpy.where((cosSunAzSW > 0) & (sunAzSW <= 0), 2 * numpy.pi * sunAzSW, sunAzSW)
+    sunAzSW = numpy.where((cosSunAzSW > 0) & (sinSunAzSW <= 0), 2 * numpy.pi + sunAzSW, sunAzSW)
     
     # Now convert to azimuth from north, turning east, as is usual convention
     sunAz = sunAzSW + numpy.pi
     # Keep within [0, 2pi] range
     sunAz = numpy.where(sunAz > 2 * numpy.pi, sunAz - 2 * numpy.pi, sunAz)
     
-    sunAngles = numpy.vstack((sunAz, sunZen)).T
-    return sunAngles
+    return (sunAz, sunZen)
 
 
 def makeAnglesImage(cmdargs, nadirLine, extentSunAngles, satAzimuth, imgInfo):
