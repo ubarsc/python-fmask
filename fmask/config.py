@@ -519,6 +519,12 @@ class AnglesInfo(object):
         Return the average view azimuth angle for the given indices
         """
     
+    @abc.abstractmethod
+    def setScaleToRadians(self, scale):
+        """
+        Set scaling factor to get radians from angles image values. 
+        """
+    
 class AnglesFileInfo(AnglesInfo):
     """
     An implementation of AnglesInfo that reads the information from
@@ -545,6 +551,9 @@ class AnglesFileInfo(AnglesInfo):
         self.solarAzimuthData = None
         self.viewZenithData = None
         self.viewAzimuthData = None
+        
+        # This default value matches the file produced by fmask_usgsLandsatMakeAnglesImage.py
+        self.scaleToRadians = 0.01
     
     @staticmethod
     def readData(filename, bandNum):
@@ -580,25 +589,31 @@ class AnglesFileInfo(AnglesInfo):
         """
         Return the average solar zenith angle for the given indices
         """
-        return self.solarZenithData[indices].mean()
+        return self.solarZenithData[indices].mean() * self.scaleToRadians
 
     def getSolarAzimuthAngle(self, indices):
         """
         Return the average solar azimuth angle for the given indices
         """
-        return self.solarAzimuthData[indices].mean()
+        return self.solarAzimuthData[indices].mean() * self.scaleToRadians
     
     def getViewZenithAngle(self, indices):
         """
         Return the average view zenith angle for the given indices
         """
-        return self.viewZenithData[indices].mean()
+        return self.viewZenithData[indices].mean() * self.scaleToRadians
 
     def getViewAzimuthAngle(self, indices):
         """
         Return the average view azimuth angle for the given indices
         """
-        return self.viewAzimuthData[indices].mean()
+        return self.viewAzimuthData[indices].mean() * self.scaleToRadians
+
+    def setScaleToRadians(self, scale):
+        """
+        Set scaling factor to get radians from angles image values. 
+        """
+        self.scaleToRadians = scale
 
 class AngleConstantInfo(AnglesInfo):
     """
