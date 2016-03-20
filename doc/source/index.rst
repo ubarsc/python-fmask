@@ -27,12 +27,30 @@ It is licensed under GPL 3.
 Originally developed by Neil Flood at `DSITI <https://www.qld.gov.au/dsiti/>`_ 
 and additional work funded by `Landcare Research <http://www.landcareresearch.co.nz>`_.
 
+
+Philosophy
+----------
+This package implements the Fmask algorithm as a Python module. It is intended that this 
+can be wrapped in a variety of main programs which can handle the local details of how
+the image files are named and organised, and is intended to provide maximum flexibility. It
+should not be tied to expecting the imagery to be layed out in a particular manner.
+
+However, we have also supplied some example wrapper scripts, based around the image organisation
+as supplied by the usual distributors of the imagery. In the case of Landsat, we have supplied
+main programs which can cope with the data as it comes from USGS, while in the case of Sentinel-2
+we have supplied wrappers to deal with the data as supplied by ESA. 
+
+It is expected that some users will use these directly, while larger organisations will wish to
+create their own wrappers specific to their own file naming and layout conventions. 
+
+The examples shown below use the given example wrappers. 
+
 Command Line Examples
 ---------------------
 
 Please note that the output format used is defined by `RIOS <http://rioshome.org/>`_. This defaults to HFA (.img). 
 See `RIOS documentation <http://rioshome.org/rios_imagewriter.html#rios.imagewriter.setDefaultDriver>`_
-for more information and how to change this using environment variables.
+for more information and how to change this using the environment variable $RIOS_DFLT_DRIVER.
 
 **Note:** these examples are for use in a Unix/Linux shell so that the filename wildcards
 get expanded properly. Windows users should prefix these commands with "python PATH\\TO\\fmask_expandWildcards.py" where 
@@ -60,19 +78,25 @@ Landsat 8::
     gdal_merge.py -separate -of HFA -co COMPRESSED=YES -o ref.img LC8*_B[1-7,9].TIF
     gdal_merge.py -separate -of HFA -co COMPRESSED=YES -o thermal.img LC8*_B1[0,1].TIF
 
+The next step is to create an image of the relevant angles, per-pixel, for use in subsequent steps.
+For Landsat, this can be done using::
+
+    fmask_usgsLandsatMakeAnglesImage.py -m *_MTL.txt -t ref.img -o angles.img
+
 Then mask and Top of Atmosphere reflectance must be calculated and finally the cloud mask itself::
 
     fmask_usgsLandsatSaturationMask.py -i ref.img -m *_MTL.txt -o saturationmask.img
-    fmask_usgsLandsatTOA.py -i ref.img -m *_MTL.txt -o toa.img
-    fmask_usgsLandsatStacked.py -t thermal.img -a toa.img -m *_MTL.txt -s saturationmask.img -o cloud.img 
+    fmask_usgsLandsatTOA.py -i ref.img -m *_MTL.txt -z angles.img -o toa.img
+    fmask_usgsLandsatStacked.py -t thermal.img -a toa.img -m *_MTL.txt -z angles.img -s saturationmask.img -o cloud.img 
 
-If the thermal band is empty (for Landsat8) then it is ignored.
+If the thermal band is empty (for Landsat-8 with the SSM anomaly, after 2015-11-01) then it 
+is ignored gracefully.
 
 Sentinel2
 ^^^^^^^^^
 
 The command line scripts supplied can process a Sentinel2 Level C granule from the image directory. 
-Here is an example of how to to this::
+Here is an example of how to to this (N.B. currently won't work, as the angles file is not yet done)::
 
     gdalbuildvrt -resolution lowest -separate allbands.vrt S2*_B0[1-9].jp2 S2*_B1[0-2].jp2
     fmask_sentinel2Stacked.py -a allbands.vrt -x ../*.xml -o cloud.img
