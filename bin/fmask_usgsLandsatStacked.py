@@ -41,6 +41,8 @@ class CmdArgs(object):
             help='Input .MTL file')
         self.parser.add_option('-s', '--saturation', dest='saturation',
             help='Input saturation mask (see fmask_usgsLandsatSaturationMask.py)')
+        self.parser.add_option("-z", "--anglesfile", dest="anglesfile",
+            help="Image of sun and satellite angles (see fmask_usgsLandsatMakeAnglesImage.py)")
         self.parser.add_option('-o', '--output', dest='output',
             help='output cloud mask')
         self.parser.add_option('-v', '--verbose', dest='verbose', default=False,
@@ -69,7 +71,8 @@ def mainRoutine():
     # stack of Landsat thermal bands
     thermalInfo = config.readThermalInfoFromLandsatMTL(cmdargs.mtl)
                         
-    anglesInfo = config.readAnglesFromLandsatMTL(cmdargs.mtl)
+    anglesfile = cmdargs.anglesfile
+    anglesInfo = config.AnglesFileInfo(anglesfile, 3, anglesfile, 2, anglesfile, 1, anglesfile, 0)
     
     mtlInfo = config.readMTLFile(cmdargs.mtl)
     landsat = mtlInfo['SPACECRAFT_ID'][-1]
