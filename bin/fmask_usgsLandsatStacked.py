@@ -55,7 +55,7 @@ class CmdArgs(object):
         (options, self.args) = self.parser.parse_args()
         self.__dict__.update(options.__dict__)
         
-        if (self.thermal is None or 
+        if (self.thermal is None or self.anglesfile is None or 
                 self.mtl is None is None or self.output is None
                 or self.toa is None):
             self.parser.print_help()
