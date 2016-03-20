@@ -97,11 +97,13 @@ def riosTOA(info, inputs, outputs, otherinputs):
     if inIgnore is None:
         inIgnore = 0
 
+    cosSunZen = numpy.cos(inputs.angles[3] * otherinputs.anglesToRadians)
+    
     toaRefList = []
     for band in range(nbands):
         rtoa = infile[band] * otherinputs.gains[band] + otherinputs.offsets[band]
 
-        p = numpy.pi * rtoa * otherinputs.earthSunDistanceSq / (otherinputs.esun[band] * otherinputs.csza)
+        p = numpy.pi * rtoa * otherinputs.earthSunDistanceSq / (otherinputs.esun[band] * cosSunZen)
         # clip to a sensible range
         numpy.clip(p, -0.2, 2.0, out=p)
         # mask out where zero in input
@@ -114,7 +116,7 @@ def riosTOA(info, inputs, outputs, otherinputs):
     outputs.outfile = out.astype(numpy.int16)
 
 
-def makeTOAReflectance(infile, mtlFile, outfile):
+def makeTOAReflectance(infile, mtlFile, anglesfile, outfile):
     """
     Main routine - does the calculation
 
@@ -130,17 +132,19 @@ def makeTOAReflectance(infile, mtlFile, outfile):
     mtlFile is the .mtl file.
     outfile will be created in the default format that RIOS
     is configured to use and will be top of atmosphere 
-    reflectance values \*1000.
+    reflectance values *10000. Also assumes that the 
+    angles image file is scaled as radians*100, and has layers for
+    satAzimuth, satZenith, sunAzimuth, sunZenith, in that order. 
     
     """
     mtlInfo = config.readMTLFile(mtlFile)
     spaceCraft = mtlInfo['SPACECRAFT_ID']
     date = mtlInfo['DATE_ACQUIRED']
     date = date.replace('-', '')
-    sza = 90.0 - float(mtlInfo['SUN_ELEVATION'])
     
     inputs = applier.FilenameAssociations()
     inputs.infile = infile
+    inputs.angles = anglesfile
 
     outputs = applier.FilenameAssociations()
     outputs.outfile = outfile
@@ -149,10 +153,10 @@ def makeTOAReflectance(infile, mtlFile, outfile):
     otherinputs.earthSunDistance = earthSunDistance(date)
     otherinputs.earthSunDistanceSq = otherinputs.earthSunDistance * otherinputs.earthSunDistance
     otherinputs.esun = ESUN_LOOKUP[spaceCraft]
-    otherinputs.csza = numpy.cos(numpy.radians(sza))
     gains, offsets = readGainsOffsets(mtlInfo)
     otherinputs.gains = gains
     otherinputs.offsets = offsets
+    otherinputs.anglesToRadians = 0.01
 
     controls = applier.ApplierControls()
     controls.progress = cuiprogress.GDALProgressBar()
