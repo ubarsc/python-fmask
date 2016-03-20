@@ -32,6 +32,8 @@ class CmdArgs(object):
             help='Input raw DN radiance image')
         self.parser.add_option('-m', '--mtl', dest='mtl', 
             help='.MTL  file')
+        self.parser.add_option("-z", "--anglesfile", dest="anglesfile",
+            help="Image of sun and satellite angles (see fmask_usgsLandsatMakeAnglesImage.py)")
         self.parser.add_option('-o', '--output', dest='output',
             help='Output TOA reflectance file')
 
@@ -39,14 +41,14 @@ class CmdArgs(object):
         self.__dict__.update(options.__dict__)
 
         if (self.infile is None or self.mtl is None or  
-                self.output is None):
+                self.output is None or self.anglesfile is None):
             self.parser.print_help()
             sys.exit()
 
 def mainRoutine():
     cmdargs = CmdArgs()
     
-    landsatTOA.makeTOAReflectance(cmdargs.infile, cmdargs.mtl, cmdargs.output)
+    landsatTOA.makeTOAReflectance(cmdargs.infile, cmdargs.mtl, cmdargs.anglesfile, cmdargs.output)
     
 if __name__ == '__main__':
     mainRoutine()
