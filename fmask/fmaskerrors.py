@@ -29,3 +29,5 @@ class FmaskParameterError(FmaskException):
 class FmaskFileError(FmaskException):
     "Data in file is incorrect"
 
+class FmaskNotSupportedError(FmaskException):
+    "Requested operation is not supported"

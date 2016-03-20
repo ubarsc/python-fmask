@@ -671,20 +671,9 @@ def readAnglesFromLandsatMTL(mtlfile):
     Given the path to a Landsat USGS .MTL file, read the angles
     out and return an instance of AngleConstantInfo.
     
+    This is no longer supported, and this routine now raises an exception. 
+    
     """
-    mtlInfo = readMTLFile(mtlfile)
-    saa = None
-    sza = None
-    
-    if 'SUN_AZIMUTH' in mtlInfo:
-        saa = numpy.radians(float(mtlInfo['SUN_AZIMUTH']))
-    if 'SUN_ELEVATION' in mtlInfo:
-        sza = numpy.radians(90.0 - float(mtlInfo['SUN_ELEVATION']))
-
-    if saa is None or sza is None:
-        msg = 'Cannot find SUN_AZIMUTH/SUN_ELEVATION fields in MTL file'
-        raise fmaskerrors.FmaskFileError(msg)
-    
-    # TODO: do we have better numbers for the Landsat view azimuth?
-    angles = AngleConstantInfo(sza, saa, 0.0, 0.0)
-    return angles
+    msg = ("The simplified option of assuming constant angles across the whole image is "+
+        "no longer supported. You must use per-pixel angles. ")
+    raise fmaskerrors.FmaskNotSupportedError(msg)
