@@ -41,17 +41,18 @@ nadir point, the scan-line, and the assumed satellite altitude, and includes the
 appropriate allowance for earth curvature. 
 
 Because this works by searching the imagery for the non-null area, and assumes that 
-this represents a full-swath image, it would not work for a subsection. 
+this represents a full-swath image, it would not work for a subset of a full image. 
 
-The sun angles are approximated using the Michalsky algorithm (Michalsky, 1988), 
-which is accurate to 0.011 degree, for the period 1950-2050. 
-(Actually, maybe I should just translate the 6S code from
-Fortran.......)
+The sun angles are approximated using the algorithm found in the Fortran code with
+6S (Second Simulation of the Satellite Signal in the Solar Spectrum). The subroutine
+in question is the POSSOL() routine. I translated the Fortran code into Python for
+inclusion here. 
 
 """
 from __future__ import print_function, division
 
 import argparse
+import datetime
 
 import numpy
 from osgeo import osr
@@ -87,10 +88,10 @@ def mainRoutine():
     corners = findImgCorners(cmdargs.templateimg, imgInfo)
     nadirLine = findNadirLine(corners)
     
-    cornerSunAngles = sunAnglesForPoints(corners, mtlInfo)
+    extentSunAngles = sunAnglesForExtent(imgInfo, mtlInfo)
     satAzimuth = satAzLeftRight(nadirLine)
     
-    makeAnglesImage(cmdargs, nadirLine, corners, cornerSunAngles, satAzimuth, imgInfo)
+    makeAnglesImage(cmdargs, nadirLine, extentSunAngles, satAzimuth, imgInfo)
     
 
 def findImgCorners(img, imgInfo):
@@ -235,24 +236,82 @@ def localRadius(latitude):
     return R
 
 
-def sunAnglesForPoints(corners, mtlInfo):
+def sunAnglesForExtent(imgInfo, mtlInfo):
     """
-    Return array of sun azimuth and zenith for each of the (x, y) points given
-    in corners. First column is azimuth, second column is zenith, both are in radians. 
+    Return array of sun azimuth and zenith for each of the corners of the image
+    extent. Note that this is the raster extent, not the corners of the swathe.  
+    
+    The algorithm used here has been copied from the 6S possol() subroutine. The
+    Fortran code I copied it from was .... up to the usual standard in 6S. So, the
+    notation is not always clear.  
     
     """
-    # For now, just kludge using the scene centre sun angles. Come back to this
-    # when I have the proper algorithm......
-    sunAzimuth = numpy.radians(float(mtlInfo['SUN_AZIMUTH']))
-    sunZenith = numpy.radians(90.0 - float(mtlInfo['SUN_ELEVATION']))
+    cornerLatLong = imgInfo.getCorners(outEPSG=4326)
+    (ul_long, ul_lat, ur_long, ur_lat, lr_long, lr_lat, ll_long, ll_lat) = cornerLatLong
+    pts = numpy.array([
+        [ul_long, ul_lat], 
+        [ur_long, ur_lat], 
+        [ll_long, ll_lat], 
+        [lr_long, lr_lat]
+    ])
+    longDeg = pts[:, 0]
+    latDeg = pts[:, 1]
+    latRad = numpy.radians(latDeg)
     
-    sunAngles = numpy.array([(sunAzimuth, sunZenith) for i in range(len(corners))])
+    # Date/time in UTC
+    dateStr = mtlInfo['DATE_ACQUIRED']
+    timeStr = mtlInfo['SCENE_CENTER_TIME'].replace('Z', '')
+    ymd = [int(i) for i in dateStr.split('-')]
+    dateObj = datetime.date(ymd[0], ymd[1], ymd[2])
+    julianDay = (dateObj - datetime.date(ymd[0], 1, 1)).days + 1
+    juldayYearEnd = (datetime.date(ymd[0], 12, 31) - datetime.date(ymd[0], 1, 1)).days + 1
+    # Julian day as a proportion of the year
+    jdp = julianDay / juldayYearEnd
+    jdpr = jdp * 2 * numpy.pi
+    # Hour in UTC
+    hms = [float(x) for x in timeStr.split(':')]
+    hourGMT = hms[0] + hms[1] / 60.0 + hms[2] / 3600.0
+    
+    # Now work out the solar position. This is copied from the 6S code, but 
+    # is also documented in the 6S manual. The notation
+    a = numpy.array([0.000075, 0.001868, 0.032077, 0.014615, 0.040849])
+    meanSolarTime = hourGMT + longDeg / 15.0
+    localSolarDiff = (a[0] + a[1] * numpy.cos(jdpr) - a[2] * numpy.sin(jdpr) - 
+        a[3] * numpy.cos(2*jdpr) - a[4] * numpy.sin(2*jdpr)) * 12 * 60 / numpy.pi
+    trueSolarTime = meanSolarTime + localSolarDiff / 60 - 12.0
+    # As an angle
+    ah = trueSolarTime * numpy.radians(15)
+    
+    b = numpy.array([0.006918, 0.399912, 0.070257, 0.006758, 0.000907, 0.002697, 0.001480])
+    delta = (b[0] - b[1]*numpy.cos(jdpr) + b[2]*numpy.sin(jdpr) - b[3]*numpy.cos(2.*jdpr) + 
+        b[4]*numpy.sin(2.*jdpr) - b[5]*numpy.cos(3.*jdpr) + b[6]*numpy.sin(3.*jdpr))
+        
+    cosSunZen = (numpy.sin(latRad) * numpy.sin(delta) + 
+        numpy.cos(latRad) * numpy.cos(delta) * numpy.cos(ah))
+    sunZen = numpy.arccos(cosSunZen)
+    
+    # sun azimuth from south, turning west (yeah, I know, weird, isn't it....)
+    sinSunAzSW = numpy.cos(delta) * numpy.sin(ah) / numpy.sin(sunZen)
+    sinSunAzSW = sinSunAzSW.clip(-1.0, 1.0)
+    
+    # This next bit seems to be to get the azimuth in the correct quadrant. I do
+    # not really understand it. 
+    cosSunAzSW = (-numpy.cos(latRad) * numpy.sin(delta) + 
+        numpy.sin(latRad) * numpy.cos(delta) * numpy.cos(ah)) / numpy.sin(sunZen)
+    sunAzSW = numpy.arcsin(sinSunAzSW)
+    sunAzSW = numpy.where(cosSunAzSW <= 0, numpy.pi - sunAzSW, sunAzSW)
+    sunAzSW = numpy.where((cosSunAzSW > 0) & (sunAzSW <= 0), 2 * numpy.pi * sunAzSW, sunAzSW)
+    
+    # Now convert to azimuth from north, turning east, as is usual convention
+    sunAz = sunAzSW + numpy.pi
+    # Keep within [0, 2pi] range
+    sunAz = numpy.where(sunAz > 2 * numpy.pi, sunAz - 2 * numpy.pi, sunAz)
+    
+    sunAngles = numpy.vstack((sunAz, sunZen)).T
     return sunAngles
 
-# def sunAnglesAtPoint(
 
-
-def makeAnglesImage(cmdargs, nadirLine, corners, cornerSunAngles, satAzimuth, imgInfo):
+def makeAnglesImage(cmdargs, nadirLine, extentSunAngles, satAzimuth, imgInfo):
     """
     Make a single output image file of the sun and satellite angles for every
     pixel in the template image. 
@@ -271,8 +330,11 @@ def makeAnglesImage(cmdargs, nadirLine, corners, cornerSunAngles, satAzimuth, im
     (ctrLat, ctrLong) = getCtrLatLong(imgInfo)
     otherargs.R = localRadius(ctrLat)
     otherargs.nadirLine = nadirLine
-    otherargs.corners = corners
-    otherargs.cornerSunAngles = cornerSunAngles
+    otherargs.xMin = imgInfo.xMin
+    otherargs.xMax = imgInfo.xMax
+    otherargs.yMin = imgInfo.yMin
+    otherargs.yMax = imgInfo.yMax
+    otherargs.extentSunAngles = extentSunAngles
     otherargs.satAltitude = 705000      # Landsat nominal altitude in metres
     otherargs.satAzimuth = satAzimuth
     otherargs.radianScale = 100        # Store pixel values as (radians * radianScale)
@@ -308,14 +370,33 @@ def makeAngles(info, inputs, outputs, otherargs):
     (satAzimuthLeft, satAzimuthRight) = otherargs.satAzimuth
     satAzimuth = numpy.where(isLeft, satAzimuthLeft, satAzimuthRight)
     
-    # Sun angles are fixed for now, but we should be interpolating between the corner values....
-    sunAzimuth = numpy.zeros(xblock.shape, dtype=numpy.float32) + otherargs.cornerSunAngles[0][0]
-    sunZenith = numpy.zeros(xblock.shape, dtype=numpy.float32) + otherargs.cornerSunAngles[0][1]
+    # Interpolate the sun angles from those calculated at the corners of the whole raster extent
+    (xMin, xMax, yMin, yMax) = (otherargs.xMin, otherargs.xMax, otherargs.yMin, otherargs.yMax)
+    sunAzimuth = bilinearInterp(xMin, xMax, yMin, yMax, otherargs.extentSunAngles[:, 0], xblock, yblock)
+    sunZenith = bilinearInterp(xMin, xMax, yMin, yMax, otherargs.extentSunAngles[:, 1], xblock, yblock)
     
     angleStack = numpy.array([satAzimuth, satZenith, sunAzimuth, sunZenith])
     angleStackDN = angleStack * otherargs.radianScale
     
     outputs.angles = numpy.round(angleStackDN).astype(numpy.int16)
+
+
+def bilinearInterp(xMin, xMax, yMin, yMax, cornerVals, x, y):
+    """
+    Evaluate the given value on a grid of (x, y) points. The exact value is given
+    on a set of corner points (top-left, top-right, bottom-left, bottom-right). 
+    The corner locations are implied from xMin, xMax, yMin, yMax. 
+     
+    """
+    p = (y - yMin) / (yMax - yMin)
+    q = (x - xMin) / (xMax - xMin)
+    
+    # Give the known corner values some simple names
+    (tl, tr, bl, br) = cornerVals
+    
+    # Calculate the interpolated values
+    vals = tr * p * q + tl * p * (1-q) + br * (1-p) * q + bl * (1-p) * (1-q)
+    return vals
 
 
 def getCtrLatLong(imgInfo):
