@@ -121,10 +121,13 @@ def doFmask(fmaskFilenames, fmaskConfig):
     if fmaskConfig.verbose: print("Cloud layer, pass 1")
     (pass1file, Twater, Tlow, Thigh, NIR_17) = doPotentialCloudFirstPass(
         fmaskFilenames, fmaskConfig, missingThermal)
+    if fmaskConfig.verbose: print("  Twater=", Twater, "Tlow=", Tlow, "Thigh=", Thigh, "NIR_17=", 
+        NIR_17)
     
     if fmaskConfig.verbose: print("Cloud layer, pass 2")
     (pass2file, landThreshold) = doPotentialCloudSecondPass(fmaskFilenames, 
         fmaskConfig, pass1file, Twater, Tlow, Thigh, missingThermal)
+    if fmaskConfig.verbose: print("  landThreshold=", landThreshold)
 
     if fmaskConfig.verbose: print("Cloud layer, pass 3")
     interimCloudmask = doCloudLayerFinalPass(fmaskFilenames, fmaskConfig, 
@@ -138,7 +141,7 @@ def doFmask(fmaskFilenames, fmaskConfig):
     
     if fmaskConfig.verbose: print("Making 3d clouds")
     (cloudShape, cloudBaseTemp, cloudClumpNdx) = make3Dclouds(fmaskFilenames, 
-        fmaskConfig, clumps, numClumps)
+        fmaskConfig, clumps, numClumps, missingThermal)
     
     if fmaskConfig.verbose: print("Making cloud shadow shapes")
     shadowShapesDict = makeCloudShadowShapes(fmaskFilenames, fmaskConfig,
@@ -433,7 +436,7 @@ def doPotentialCloudSecondPass(fmaskFilenames, fmaskConfig, pass1file,
     
     infiles.pass1 = pass1file
     infiles.toaref = fmaskFilenames.toaRef
-    if fmaskFilenames.thermal is not None:
+    if not missingThermal:
         infiles.thermal = fmaskFilenames.thermal
     (fd, outfiles.pass2) = tempfile.mkstemp(prefix='pass2', dir=fmaskConfig.tempDir, 
                                     suffix=fmaskConfig.defaultExtension)
@@ -542,7 +545,7 @@ def doCloudLayerFinalPass(fmaskFilenames, fmaskConfig, pass1file, pass2file,
     
     infiles.pass1 = pass1file
     infiles.pass2 = pass2file
-    if fmaskFilenames.thermal is not None:
+    if not missingThermal:
         infiles.thermal = fmaskFilenames.thermal
     otherargs.landThreshold = landThreshold
     otherargs.Tlow = Tlow
@@ -607,6 +610,7 @@ def cloudFinalPass(info, inputs, outputs, otherargs):
     
     outputs.cloudmask = numpy.array([bufferedCloudmask])
 
+
 def doPotentialShadows(fmaskFilenames, fmaskConfig, NIR_17):
     """
     Make potential shadow layer, as per section 3.1.3 of Zhu&Woodcock. 
@@ -667,7 +671,7 @@ def clumpClouds(cloudmaskfile):
 
 
 CLOUD_HEIGHT_SCALE = 10
-def make3Dclouds(fmaskFilenames, fmaskConfig, clumps, numClumps):
+def make3Dclouds(fmaskFilenames, fmaskConfig, clumps, numClumps, missingThermal):
     """
     Create 3-dimensional cloud objects from the cloud mask, and the thermal 
     information. Assumes a constant lapse rate to convert temperature into height.
@@ -691,7 +695,7 @@ def make3Dclouds(fmaskFilenames, fmaskConfig, clumps, numClumps):
     
     # if we have thermal, run against that 
     # otherwise we are just 
-    if fmaskFilenames.thermal is not None:
+    if not missingThermal:
         infiles.thermal = fmaskFilenames.thermal
     else:
         infiles.toaRef = fmaskFilenames.toaRef
