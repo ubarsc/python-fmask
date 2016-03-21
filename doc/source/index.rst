@@ -100,10 +100,12 @@ Sentinel2
 ^^^^^^^^^
 
 The command line scripts supplied can process a Sentinel2 Level C granule from the image directory. 
-Here is an example of how to to this (N.B. currently won't work, as the angles file is not yet done)::
+Here is an example of how to do this. This example works at low resolution, which is nice for
+fast run times, but the recipe can be varied as required. ::
 
     gdalbuildvrt -resolution lowest -separate allbands.vrt S2*_B0[1-9].jp2 S2*_B1[0-2].jp2
-    fmask_sentinel2Stacked.py -a allbands.vrt -x ../*.xml -o cloud.img
+    fmask_sentinel2makeAnglesImage.py -i ../S2*.xml -o angles.img
+    fmask_sentinel2Stacked.py -a allbands.vrt -z angles.img -o cloud.img
 
 Downloads
 ---------
