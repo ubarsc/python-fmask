@@ -51,6 +51,7 @@ inclusion here.
 """
 from __future__ import print_function, division
 
+import sys
 import argparse
 import datetime
 
@@ -73,6 +74,10 @@ def getCmdargs():
         help="Image filename to use as template for output angles image")
     p.add_argument("-o", "--outfile", help="Output image file")
     cmdargs = p.parse_args()
+    if (cmdargs.mtl is None or cmdargs.templateimg is None or 
+            cmdargs.outfile is None):
+        p.print_help()
+        sys.exit(1)
     return cmdargs
 
 
