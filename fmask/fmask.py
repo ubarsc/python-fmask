@@ -535,7 +535,7 @@ def potentialCloudSecondPass(info, inputs, outputs, otherargs):
 
 
 def doCloudLayerFinalPass(fmaskFilenames, fmaskConfig, pass1file, pass2file, 
-                    landThreshold, Tlow, missingthermal):
+                    landThreshold, Tlow, missingThermal):
     """
     Final pass
     """
@@ -546,7 +546,7 @@ def doCloudLayerFinalPass(fmaskFilenames, fmaskConfig, pass1file, pass2file,
     
     infiles.pass1 = pass1file
     infiles.pass2 = pass2file
-    if not missingthermal:
+    if not missingThermal:
         infiles.thermal = fmaskFilenames.thermal
     otherargs.landThreshold = landThreshold
     otherargs.Tlow = Tlow
