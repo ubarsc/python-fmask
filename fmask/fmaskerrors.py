@@ -31,3 +31,6 @@ class FmaskFileError(FmaskException):
 
 class FmaskNotSupportedError(FmaskException):
     "Requested operation is not supported"
+    
+class Sen2MetaError(Exception):
+    "Error with Sentinel-2 metadata"
