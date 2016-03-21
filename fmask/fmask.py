@@ -1155,9 +1155,10 @@ def finalizeAll(fmaskFilenames, fmaskConfig, interimCloudmask, interimShadowmask
     
     rat.setColorTable(outfiles.out, numpy.array([[2, 255, 0, 255, 255],
                                                  [3, 255, 255, 0, 255],
-                                                 [4, 85, 255, 255, 255]]))
+                                                 [4, 85, 255, 255, 255],
+                                                 [5, 0, 0, 255, 255]]))
     rat.writeColumn(outfiles.out, "Classification", [b"Null", b"Valid", b"Cloud", 
-                                                    b"Cloud Shadow", b"Snow"])
+                                                    b"Cloud Shadow", b"Snow", b"Water"])
 
 def maskAndBuffer(info, inputs, outputs, otherargs):
     """
@@ -1180,27 +1181,34 @@ def maskAndBuffer(info, inputs, outputs, otherargs):
 
     cloud = inputs.cloud[0].astype(numpy.bool)
     shadow = inputs.shadow[0].astype(numpy.bool)
+    water = inputs.pass1[1].astype(numpy.bool)
     
     # Buffer the cloud
     if hasattr(otherargs, 'bufferkernel'):
         cloud = maximum_filter(cloud, footprint=otherargs.bufferkernel)
 
     # Mask the shadow, against the buffered cloud, and the nullmask
-    shadow[cloud] = 0
+    shadow[cloud] = False
     
-    # Mask the snow
+    # Mask the snow against the cloud and shadow
     mask = cloud | shadow
-    snow[mask] = 0
+    snow[mask] = False
+    
+    # Mask the water against the cloud, shadow and snow
+    mask = cloud | shadow | snow
+    water[mask] = False
     
     # now convert these masks to 0 - null
     # 1 - not null and not mask
     # 2 - cloud
     # 3 - cloud shadow
     # 4 - snow
+    # 5 - water
     outNullval = 0
     out = (cloud.astype(numpy.uint8) + 1)
     out[shadow] = 3
-    out[snow] = 4        
+    out[snow] = 4
+    out[water] = 5
     out[resetNullmask] = outNullval
     outputs.out = numpy.array([out])
     
