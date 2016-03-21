@@ -546,7 +546,7 @@ def doCloudLayerFinalPass(fmaskFilenames, fmaskConfig, pass1file, pass2file,
     
     infiles.pass1 = pass1file
     infiles.pass2 = pass2file
-    if not missingThermal:
+    if not missingthermal:
         infiles.thermal = fmaskFilenames.thermal
     otherargs.landThreshold = landThreshold
     otherargs.Tlow = Tlow
