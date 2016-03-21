@@ -1157,8 +1157,14 @@ def finalizeAll(fmaskFilenames, fmaskConfig, interimCloudmask, interimShadowmask
                                                  [3, 255, 255, 0, 255],
                                                  [4, 85, 255, 255, 255],
                                                  [5, 0, 0, 255, 255]]))
-    rat.writeColumn(outfiles.out, "Classification", [b"Null", b"Valid", b"Cloud", 
+    
+    try:
+        rat.writeColumn(outfiles.out, "Classification", [b"Null", b"Valid", b"Cloud", 
                                                     b"Cloud Shadow", b"Snow", b"Water"])
+    except Exception:
+        # Failed to write the RAT, probably because the selected format does not support it. 
+        # Just ignore it silently
+        pass
 
 def maskAndBuffer(info, inputs, outputs, otherargs):
     """
