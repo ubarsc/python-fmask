@@ -35,6 +35,10 @@ can be wrapped in a variety of main programs which can handle the local details 
 the image files are named and organised, and is intended to provide maximum flexibility. It
 should not be tied to expecting the imagery to be layed out in a particular manner.
 
+This modular design also simplifies the use of the same core algorithm on either Landsat and 
+Sentinel imagery. The wrapper programs take care of differences in file organisation and 
+metadata formats, while the core algorithm is the same for both. 
+
 However, we have also supplied some example wrapper scripts, based around the image organisation
 as supplied by the usual distributors of the imagery. In the case of Landsat, we have supplied
 main programs which can cope with the data as it comes from USGS, while in the case of Sentinel-2
