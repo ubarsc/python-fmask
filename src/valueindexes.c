@@ -41,7 +41,8 @@ static PyObject *valueIndexes_valndxFunc(PyObject *self, PyObject *args)
 {
 PyArrayObject *pInput, *pIndexes, *pValLU, *pCurrentIdx;
 npy_int64 nMin, nMax, arrVal = 0;
-int nDone = 0, nFound = 0, nDim, nType, j, m, i, idx;
+int nDone = 0, nFound = 0, nDim, nType, i, idx;
+npy_uint32 j, m;
 npy_intp *pDims, *pCurrIdx;
 
     if( !PyArg_ParseTuple(args, "OOLLOO:valndxFunc", &pInput, &pIndexes, &nMin, &nMax, &pValLU, &pCurrentIdx))
