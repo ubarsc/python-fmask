@@ -109,9 +109,14 @@ fast run times, but the recipe can be varied as required. ::
 
 Downloads
 ---------
-From `Sourceforge <https://sourceforge.net/projects/pythonfmask/files/>`_ or `BitBucket <https://bitbucket.org/chchrsc/python-fmask/downloads>`_.
+Get the source from `Sourceforge <https://sourceforge.net/projects/pythonfmask/files/>`_ or `BitBucket <https://bitbucket.org/chchrsc/python-fmask/downloads>`_.
 
-`Conda <http://conda.pydata.org/miniconda.html#miniconda>`_ packages for linux64 and win64 (other platforms to follow) are available under the 'rios' channel.
+`Conda <http://conda.pydata.org/miniconda.html#miniconda>`_ packages are available under the 'rios' channel.
+Once you have installed `Conda <http://conda.pydata.org/miniconda.html#miniconda>`_, run the following commands on the command line to install python-fmask: ::
+    conda config --add channels conda-forge 
+    conda config --add channels rios 
+    conda create -n myenv python-fmask 
+    source activate myenv # omit 'source' on Windows
 
 Issues
 ------
