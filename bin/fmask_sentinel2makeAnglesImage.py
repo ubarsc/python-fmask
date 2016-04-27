@@ -21,6 +21,7 @@ A bit of a description of how the instrument is structured can be found at
 """
 from __future__ import print_function, division
 
+import sys
 import argparse
 
 import numpy
