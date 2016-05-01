@@ -18,7 +18,7 @@
 import glob
 import fmask
 
-# If we fail to import the numpy version of setup90, still try to proceed, as it is possibly
+# If we fail to import the numpy version of setup(), still try to proceed, as it is possibly
 # because we are being run by ReadTheDocs, and so we just need to be able to generate documentation. 
 try:
     from numpy.distutils.core import setup, Extension
@@ -28,14 +28,17 @@ except ImportError:
     withExtensions = False
 
 if withExtensions:
+    # This is for a normal build
     fillminimaC = Extension(name='_fillminima', 
                 sources=['src/fillminima.c'])
     valueIndexesC = Extension(name='_valueindexes',
                 sources=['src/valueindexes.c'])
     extensionsList = [fillminimaC, valueIndexesC]
 else:
+    # This would be for a ReadTheDocs build. 
     from distutils.core import setup
     extensionsList = []
+
 
 # do the setup
 setup( name = 'python-fmask',
