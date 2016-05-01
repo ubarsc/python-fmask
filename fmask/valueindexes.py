@@ -74,6 +74,7 @@ class ValueIndexes(object):
     lot of nulls. 
     
     A ValueIndexes object has the following attributes:
+    
     * **values**            Array of all values indexed
     * **counts**            Array of counts for each value
     * **nDims**             Number of dimensions of original array
