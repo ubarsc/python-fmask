@@ -30,7 +30,13 @@ represent potential shadow objects.
 
 import numpy
 from scipy.ndimage import grey_erosion, grey_dilation, minimum_filter
-from . import _fillminima
+
+# Fail slightly less drastically when running from ReadTheDocs
+try:
+    from . import _fillminima
+except ImportError:
+    pass
+
 
 def fillMinima(img, nullval, boundaryval):
     """

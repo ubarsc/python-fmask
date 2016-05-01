@@ -17,7 +17,12 @@
 from __future__ import print_function, division
 
 import numpy
-from . import _valueindexes
+
+# Fail slightly less drastically when running from ReadTheDocs
+try:
+    from . import _valueindexes
+except ImportError:
+    pass
 
 class ValueIndexesError(Exception):
     pass
