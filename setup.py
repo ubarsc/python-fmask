@@ -15,14 +15,27 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from numpy.distutils.core import setup, Extension
 import glob
 import fmask
 
-fillminimaC = Extension(name='_fillminima', 
+# If we fail to import the numpy version of setup90, still try to proceed, as it is possibly
+# because we are being run by ReadTheDocs, and so we just need to be able to generate documentation. 
+try:
+    from numpy.distutils.core import setup, Extension
+    withExtensions = True
+except ImportError:
+    from distutils.core import setup
+    withExtensions = False
+
+if withExtensions:
+    fillminimaC = Extension(name='_fillminima', 
                 sources=['src/fillminima.c'])
-valueIndexesC = Extension(name='_valueindexes',
+    valueIndexesC = Extension(name='_valueindexes',
                 sources=['src/valueindexes.c'])
+    extensionsList = [fillminimaC, valueIndexesC]
+else:
+    from distutils.core import setup
+    extensionsList = []
 
 # do the setup
 setup( name = 'python-fmask',
@@ -33,7 +46,7 @@ setup( name = 'python-fmask',
         scripts = glob.glob("bin/*.py"),
         packages = ['fmask'],
         ext_package = 'fmask',
-        ext_modules = [fillminimaC, valueIndexesC],
+        ext_modules = extensionsList,
         license='LICENSE.txt',
         url='https://bitbucket.org/chchrsc/python-fmask',
         classifiers=['Intended Audience :: Developers',
