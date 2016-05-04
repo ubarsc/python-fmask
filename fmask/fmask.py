@@ -262,7 +262,7 @@ def potentialCloudFirstPass(info, inputs, outputs, otherargs):
     if refNull is None:
         refNull = 0
     # Special mask needed only for resets in final pass
-    refNullmask = (inputs.toaref[blue] == refNull)
+    refNullmask = (inputs.toaref == refNull).any(axis=0)
     if hasattr(inputs, 'thermal'):
         thermalNull = info.getNoDataValueFor(inputs.thermal)
         if thermalNull is None:
