@@ -109,7 +109,7 @@ fast run times, but the recipe can be varied as required. ::
 
 Downloads
 ---------
-Get the source from `Sourceforge <https://sourceforge.net/projects/pythonfmask/files/>`_ or `BitBucket <https://bitbucket.org/chchrsc/python-fmask/downloads>`_.
+Get the source from `BitBucket <https://bitbucket.org/chchrsc/python-fmask/downloads>`_.
 
 `Conda <http://conda.pydata.org/miniconda.html#miniconda>`_ packages are available under the 'rios' channel.
 Once you have installed `Conda <http://conda.pydata.org/miniconda.html#miniconda>`_, run the following commands on the command line to install python-fmask: ::
