@@ -1157,7 +1157,7 @@ def finalizeAll(fmaskFilenames, fmaskConfig, interimCloudmask, interimShadowmask
     outfiles.out = fmaskFilenames.outputMask
     controls.setOverlap(fmaskConfig.cloudBufferSize)
     controls.setThematic(True)
-    controls.setStatsIgnore(0)
+    controls.setStatsIgnore(OUTCODE_NULL)
     controls.setWindowXsize(RIOS_WINDOW_SIZE)
     controls.setWindowYsize(RIOS_WINDOW_SIZE)
     
