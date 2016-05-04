@@ -14,14 +14,19 @@ Improvement and expansion of the Fmask algorithm: cloud, cloud
 shadow, and snow detection for Landsats 4-7, 8, and Sentinel 2 images
 Remote Sensing of Environment 159 (2015) 269-277.
     
-    
+Taken from Neil Flood's implementation by permission.
+
 The notation and variable names are largely taken from the paper. Equation
 numbers are also from the paper. 
 
 Input is a top of atmosphere (TOA) reflectance file, and outputs
 are cloud, cloud shadow and snow mask files. 
 
-Taken from Neil Flood's implementation by permission.
+The output file is a single thematic raster layer with codes representing
+null, clear, cloud, shadow, snow and water. These are the values 0-5
+respectively, but there are constants defined for the different codes, 
+as fmask.fmask.OUTCODE_*
+
 """
 # This file is part of 'python-fmask' - a cloud masking module
 # Copyright (C) 2015  Neil Flood
@@ -72,6 +77,14 @@ from . import zerocheck
 SATURATION_BLUE = 0
 SATURATION_GREEN = 1
 SATURATION_RED = 2
+
+# The values used in the final output raster
+OUTCODE_NULL = 0
+OUTCODE_CLEAR = 1
+OUTCODE_CLOUD = 2
+OUTCODE_SHADOW = 3
+OUTCODE_SNOW = 4
+OUTCODE_WATER = 5
     
 def doFmask(fmaskFilenames, fmaskConfig):
     """
@@ -1210,11 +1223,13 @@ def maskAndBuffer(info, inputs, outputs, otherargs):
     # 3 - cloud shadow
     # 4 - snow
     # 5 - water
-    outNullval = 0
-    out = (cloud.astype(numpy.uint8) + 1)
-    out[shadow] = 3
-    out[snow] = 4
-    out[water] = 5
+    outNullval = OUTCODE_NULL
+    out = numpy.zeros(cloud.shape, dtype=numpy.uint8)
+    out.fill(OUTCODE_CLEAR)
+    out[cloud] = OUTCODE_CLOUD
+    out[shadow] = OUTCODE_SHADOW
+    out[snow] = OUTCODE_SNOW
+    out[water] = OUTCODE_WATER
     out[resetNullmask] = outNullval
     outputs.out = numpy.array([out])
     
