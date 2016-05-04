@@ -51,6 +51,7 @@ def fillMinima(img, nullval, boundaryval):
     nullmask = (img == nullval)
     nonNullmask = numpy.logical_not(nullmask)
     (hMax, hMin) = (int(img[nonNullmask].max()), int(img[nonNullmask].min()))
+    boundaryval = max(boundaryval, hMin)
     img2 = numpy.zeros((nrows, ncols), dtype=dtype)
     img2.fill(hMax)
 

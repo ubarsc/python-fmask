@@ -47,6 +47,9 @@ we have supplied wrappers to deal with the data as supplied by ESA.
 It is expected that some users will use these directly, while larger organisations will wish to
 create their own wrappers specific to their own file naming and layout conventions. 
 
+The output from the core algorithm module is a single thematic raster, with integer
+codes representing null, clear, cloud, shadow, snow, water respectively.
+
 The examples shown below use the given example wrappers. 
 
 Command Line Examples
