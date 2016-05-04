@@ -111,6 +111,10 @@ static void PQ_add(PixelQueue *pixQ, PQel *p, int h) {
         printf("Level h=%d too large. ndx=%d, numLevels=%d\\n", h, ndx, pixQ->numLevels);
         exit(1);
     }
+    if (ndx < 0) {
+        printf("Ndx is negative, which is not allowed. ndx=%d, h=%d, hMin=%d\n", ndx, h, pixQ->hMin);
+        exit(1);
+    }
     thisQ = &(pixQ->q[ndx]);
     /* Add to end of queue at this level */
     current = thisQ->last;
