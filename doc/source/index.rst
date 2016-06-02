@@ -118,7 +118,7 @@ Re-wrapping and Re-configuring
 ------------------------------
 To build a different set of wrappers, and configure things differently, the default
 wrappers are a good place to start. The configuration is mainly handled by the 
-`FmaskConfig object <fmask_config>`_. 
+`FmaskConfig object <fmask_config.html>`_. 
 
 Downloads
 ---------
