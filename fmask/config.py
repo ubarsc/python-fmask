@@ -96,8 +96,9 @@ class FmaskConfig(object):
             self.bands = {BAND_BLUE:1, BAND_GREEN:2, BAND_RED:3, BAND_NIR:4,
                 BAND_SWIR1:5, BAND_SWIR2:6, BAND_CIRRUS:7}
         elif sensor == FMASK_SENTINEL2:
-            self.bands = {BAND_BLUE:1, BAND_GREEN:2, BAND_RED:3, BAND_NIR:5,
-                    BAND_SWIR1:10, BAND_SWIR2:11, BAND_CIRRUS:9}
+            # Assumes the input stack has ALL bands, in their numeric order (with 8A after 8)
+            self.bands = {BAND_BLUE:1, BAND_GREEN:2, BAND_RED:3, BAND_NIR:7,
+                    BAND_SWIR1:11, BAND_SWIR2:12, BAND_CIRRUS:10}
         else:
             msg = 'unrecognised sensor'
             raise fmaskerrors.FmaskParameterError(msg)

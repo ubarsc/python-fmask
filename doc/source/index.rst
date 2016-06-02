@@ -106,8 +106,12 @@ The command line scripts supplied can process a Sentinel2 Level C granule from t
 Here is an example of how to do this. This example works at low resolution, which is nice for
 fast run times, but the recipe can be varied as required. ::
 
-    gdalbuildvrt -resolution lowest -separate allbands.vrt S2*_B0[1-9].jp2 S2*_B1[0-2].jp2
+    # The makes a stack of ALL the bands, at the 20m resolution (a compromise between speed and detail)
+    # Bands are in order of numeric band number
+    gdalbuildvrt -resolution user -tr 20 20 -separate allbands.vrt S2*_B0[1-8].jp2 S2*_B8A.jp2 S2*_B09.jp2 S2*_B1[0-2].jp2
+    # Make a separate image of the per-pixel sun and satellite angles. 
     fmask_sentinel2makeAnglesImage.py -i ../S2*.xml -o angles.img
+    # Note that this assumes the bands are in a particular order (as created in the vrt, above)
     fmask_sentinel2Stacked.py -a allbands.vrt -z angles.img -o cloud.img
 
 Downloads
