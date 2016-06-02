@@ -72,17 +72,23 @@ from . import fmaskerrors
 # so we can check if thermal all zeroes
 from . import zerocheck
 
-#: bands in the saturation mask, if supplied
+# Bands in the saturation mask, if supplied
 SATURATION_BLUE = 0
 SATURATION_GREEN = 1
 SATURATION_RED = 2
 
 # The values used in the final output raster
+#: Output pixel value for null
 OUTCODE_NULL = 0
+#: Output pixel value for clear land
 OUTCODE_CLEAR = 1
+#: Output pixel value for cloud
 OUTCODE_CLOUD = 2
+#: Output pixel value for cloud shadow
 OUTCODE_SHADOW = 3
+#: Output pixel value for snow
 OUTCODE_SNOW = 4
+#: Output pixel value for water
 OUTCODE_WATER = 5
     
 def doFmask(fmaskFilenames, fmaskConfig):
@@ -185,7 +191,7 @@ def doFmask(fmaskFilenames, fmaskConfig):
     
     return retVal
 
-#: An offset so we can scale BT(deg C) to the range 0-255, for use in histograms.
+#: An offset so we can scale brightness temperature (BT, in deg C) to the range 0-255, for use in histograms.
 BT_OFFSET = 176    
 
 BT_HISTSIZE = 256
