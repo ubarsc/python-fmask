@@ -118,7 +118,9 @@ Re-wrapping and Re-configuring
 ------------------------------
 To build a different set of wrappers, and configure things differently, the default
 wrappers are a good place to start. The configuration is mainly handled by the 
-`FmaskConfig object <fmask_config.html>`_. 
+`FmaskConfig object <fmask_config.html>`_. For example, one would 
+call FmaskConfig.setReflectiveBand() to change which layer of the stack 
+corresponds to which wavelength band. 
 
 Downloads
 ---------
