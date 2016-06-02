@@ -65,8 +65,12 @@ def mainRoutine():
     ds = createOutfile(cmdargs.outfile, info)
     nullValDN = 1000
     
-    # Get a sorted list of the Sentinel-2 band names. 
-    bandNames = [str(i) for i in range(len(info.viewAzimuthDict))]
+    # Get a sorted list of the Sentinel-2 band names. Note that sometimes this
+    # is an incomplete list of band names, which appears to be due to a bug in 
+    # earlier versions of ESA's processing software. I suspect it relates to 
+    # Anomaly number 11 in the following page. 
+    # https://sentinel.esa.int/web/sentinel/news/-/article/new-processing-baseline-for-sentinel-2-products
+    bandNames = sorted(info.viewAzimuthDict.keys())
     
     # Mean over all bands
     satAzDeg = numpy.array([info.viewAzimuthDict[i] for i in bandNames])
