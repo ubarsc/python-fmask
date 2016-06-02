@@ -19,8 +19,7 @@ Taken from Neil Flood's implementation by permission.
 The notation and variable names are largely taken from the paper. Equation
 numbers are also from the paper. 
 
-Input is a top of atmosphere (TOA) reflectance file, and outputs
-are cloud, cloud shadow and snow mask files. 
+Input is a top of atmosphere (TOA) reflectance file. 
 
 The output file is a single thematic raster layer with codes representing
 null, clear, cloud, shadow, snow and water. These are the values 0-5
