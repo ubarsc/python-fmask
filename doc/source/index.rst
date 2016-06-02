@@ -118,8 +118,8 @@ Re-wrapping and Re-configuring
 ------------------------------
 To build a different set of wrappers, and configure things differently, the default
 wrappers are a good place to start. The configuration is mainly handled by the 
-`FmaskConfig object <fmask_config.html>`_. For example, one would 
-call FmaskConfig.setReflectiveBand() to change which layer of the stack 
+:class:`fmask.config.FmaskConfig` class. For example, one would 
+call :func:`fmask.config.FmaskConfig.setReflectiveBand` to change which layer of the stack 
 corresponds to which wavelength band. 
 
 Downloads
@@ -128,6 +128,7 @@ Get the source from `BitBucket <https://bitbucket.org/chchrsc/python-fmask/downl
 
 `Conda <http://conda.pydata.org/miniconda.html#miniconda>`_ packages are available under the 'rios' channel.
 Once you have installed `Conda <http://conda.pydata.org/miniconda.html#miniconda>`_, run the following commands on the command line to install python-fmask: ::
+
     conda config --add channels conda-forge 
     conda config --add channels rios 
     conda create -n myenv python-fmask 
