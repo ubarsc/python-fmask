@@ -99,21 +99,24 @@ def riosTOA(info, inputs, outputs, otherinputs):
 
     cosSunZen = numpy.cos(inputs.angles[3] * otherinputs.anglesToRadians)
     
+    nullMask = (inputs.infile == inIgnore).any(axis=0)
+    
     toaRefList = []
     for band in range(nbands):
         rtoa = infile[band] * otherinputs.gains[band] + otherinputs.offsets[band]
 
         p = numpy.pi * rtoa * otherinputs.earthSunDistanceSq / (otherinputs.esun[band] * cosSunZen)
         # clip to a sensible range
-        numpy.clip(p, -0.2, 2.0, out=p)
-        # mask out where zero in input
-        p[infile[band] == inIgnore] = 0
+        numpy.clip(p, 0.0, 2.0, out=p)
 
         toaRefList.append(p)
 
     out = numpy.array(toaRefList) * 10000.0
     # convert to int16 
     outputs.outfile = out.astype(numpy.int16)
+    # Mask out where input is null
+    for i in range(len(outputs.outfile)):
+        outputs.outfile[i][nullMask] = otherinputs.outNull
 
 
 def makeTOAReflectance(infile, mtlFile, anglesfile, outfile):
@@ -157,10 +160,11 @@ def makeTOAReflectance(infile, mtlFile, anglesfile, outfile):
     otherinputs.gains = gains
     otherinputs.offsets = offsets
     otherinputs.anglesToRadians = 0.01
+    otherinputs.outNull = 32767
 
     controls = applier.ApplierControls()
     controls.progress = cuiprogress.GDALProgressBar()
-    controls.setStatsIgnore(0)
+    controls.setStatsIgnore(otherinputs.outNull)
     
     applier.apply(riosTOA, inputs, outputs, otherinputs, controls=controls)
 
