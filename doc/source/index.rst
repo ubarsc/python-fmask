@@ -114,6 +114,12 @@ fast run times, but the recipe can be varied as required. ::
     # Note that this assumes the bands are in a particular order (as created in the vrt, above)
     fmask_sentinel2Stacked.py -a allbands.vrt -z angles.img -o cloud.img
 
+Re-wrapping and Re-configuring
+------------------------------
+To build a different set of wrappers, and configure things differently, the default
+wrappers are a good place to start. The configuration is mainly handled by the 
+`FmaskConfig object <fmask_config>`. 
+
 Downloads
 ---------
 Get the source from `BitBucket <https://bitbucket.org/chchrsc/python-fmask/downloads>`_.
