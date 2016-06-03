@@ -154,8 +154,11 @@ def doFmask(fmaskFilenames, fmaskConfig):
     if fmaskConfig.verbose: print("Potential shadows")
     potentialShadowsFile = doPotentialShadows(fmaskFilenames, fmaskConfig, NIR_17)
     
+    if fmaskConfig.verbose: print("Removing clouds smaller than", fmaskConfig.minCloudSize_pixels, "pixels")
+    interimCloudmask_filtered = filterSmallClouds(interimCloudmask, fmaskConfig)
+    
     if fmaskConfig.verbose: print("Clumping clouds")
-    (clumps, numClumps) = clumpClouds(interimCloudmask)
+    (clumps, numClumps) = clumpClouds(interimCloudmask_filtered)
     
     if fmaskConfig.verbose: print("Making 3d clouds")
     (cloudShape, cloudBaseTemp, cloudClumpNdx) = make3Dclouds(fmaskFilenames, 
@@ -166,24 +169,25 @@ def doFmask(fmaskFilenames, fmaskConfig):
         cloudShape, cloudClumpNdx)
     
     if fmaskConfig.verbose: print("Matching shadows")
-    interimShadowmask = matchShadows(fmaskConfig, interimCloudmask, 
+    interimShadowmask = matchShadows(fmaskConfig, interimCloudmask_filtered, 
         potentialShadowsFile, shadowShapesDict, cloudBaseTemp, Tlow, Thigh, 
         pass1file)
     
     if fmaskConfig.verbose: print("Doing final tidy up")
-    finalizeAll(fmaskFilenames, fmaskConfig, interimCloudmask, interimShadowmask, 
+    finalizeAll(fmaskFilenames, fmaskConfig, interimCloudmask_filtered, interimShadowmask, 
         pass1file)
     
     # Remove temporary files
     retVal = None
     if not fmaskConfig.keepIntermediates:
-        for filename in [pass1file, pass2file, interimCloudmask, potentialShadowsFile,
-                interimShadowmask]:
+        for filename in set([pass1file, pass2file, interimCloudmask, potentialShadowsFile,
+                interimShadowmask, interimCloudmask_filtered]):
             os.remove(filename)
     else:
         # create a dictionary with the intermediate filenames so we can return them.
         retVal = {'pass1' : pass1file, 'pass2' : pass2file, 
             'interimCloud' : interimCloudmask, 
+            'interimCloud_filtered' : interimCloudmask_filtered, 
             'potentialShadows' : potentialShadowsFile, 
             'interimShadow' : interimShadowmask}
 
@@ -673,6 +677,17 @@ def doPotentialShadows(fmaskFilenames, fmaskConfig, NIR_17):
     del outds
 
     return potentialShadowsFile
+
+
+def filterSmallClouds(interimCloudMask, fmaskConfig):
+    """
+    Remove cloud objects which are smaller than fmaskConfig.minCloudSize_pixels in size. 
+    Copies the interimCloudMask to a new image, with these removed. 
+    Returns the filtered image filename. 
+    If minCloudSize_pixels == 0, then no copy is made, and it returns interimCloudMask. 
+    """
+    interimCloudMask_filtered = interimCloudMask
+    return interimCloudMask_filtered
 
 
 def clumpClouds(cloudmaskfile):

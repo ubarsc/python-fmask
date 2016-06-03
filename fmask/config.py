@@ -66,6 +66,9 @@ class FmaskConfig(object):
     strictFmask = False
     tempDir = '.'
     TOARefScaling = 10000.0
+    # Minimum number of pixels in a single cloud (before buffering). A non-zero value
+    # would allow filtering of very small clouds. 
+    minCloudSize_pixels = 0
         
     # constants from the paper that could probably be tweaked
     # equation numbers are from the original paper.
