@@ -55,6 +55,8 @@ def getCmdargs():
     if cmdargs.output is None or cmdargs.toa is None or cmdargs.anglesfile is None:
         parser.print_help()
         sys.exit(1)
+    
+    return cmdargs
 
 
 def checkAnglesFile(inputAnglesFile, toafile):
