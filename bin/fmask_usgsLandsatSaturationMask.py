@@ -19,33 +19,31 @@
 from __future__ import print_function, division
 
 import sys
-import optparse
+import argparse
 from fmask import saturationcheck
 from fmask import config
 
-class CmdArgs(object):
+def getCmdargs():
     """
-    Class for processing command line arguments
+    Get command line arguments
     """
-    def __init__(self):
-        self.parser = optparse.OptionParser()
-        self.parser.add_option('-i', '--infile', dest='infile',
-            help='Input raw DN radiance image')
-        self.parser.add_option('-m', '--mtl', dest='mtl', 
-            help='.MTL  file')
-        self.parser.add_option('-o', '--output', dest='output',
-            help='Output saturation mask file')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-i', '--infile', help='Input raw DN radiance image')
+    parser.add_argument('-m', '--mtl', help='.MTL  file')
+    parser.add_argument('-o', '--output', help='Output saturation mask file')
 
-        (options, self.args) = self.parser.parse_args()
-        self.__dict__.update(options.__dict__)
+    cmdargs = parser.parse_args()
 
-        if (self.infile is None or self.mtl is None or  
-                self.output is None):
-            self.parser.print_help()
-            sys.exit()
+    if (cmdargs.infile is None or cmdargs.mtl is None or  
+            cmdargs.output is None):
+        parser.print_help()
+        sys.exit()
+    
+    return cmdargs
+
 
 def mainRoutine():
-    cmdargs = CmdArgs()
+    cmdargs = getCmdargs()
     
     mtlInfo = config.readMTLFile(cmdargs.mtl)
     landsat = mtlInfo['SPACECRAFT_ID'][-1]
@@ -67,7 +65,8 @@ def mainRoutine():
     
     saturationcheck.makeSaturationMask(fmaskConfig, cmdargs.infile, 
             cmdargs.output)
-    
+
+
 if __name__ == '__main__':
     mainRoutine()
     
