@@ -191,6 +191,13 @@ class FmaskConfig(object):
         
         """
         self.shadowBufferSize = bufferSize
+    
+    def setMinCloudSize(self, minCloudSize):
+        """
+        Set the minimum cloud size retained. This minimum is applied before any
+        buffering of clouds. Size is specified as an area, in pixels. 
+        """
+        self.minCloudSize_pixels = minCloudSize
         
     def setVerbose(self, verbose):
         """
