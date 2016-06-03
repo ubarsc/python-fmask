@@ -23,49 +23,51 @@ reflective and thermal and runs the fmask on it.
 from __future__ import print_function, division
 
 import sys
-import optparse
+import argparse
 from fmask import fmask
 from fmask import config
 
-class CmdArgs(object):
+
+def getCmdargs():
     """
-    Class for processing command line arguments
+    Get command line arguments
     """
-    def __init__(self):
-        self.parser = optparse.OptionParser()
-        self.parser.add_option('-t', '--thermal', dest='thermal',
-            help='Input stack of thermal bands')
-        self.parser.add_option('-a', '--toa', dest='toa',
-            help='Input stack of TOA reflectance (see fmask_usgsLandsatTOA.py)')
-        self.parser.add_option('-m', '--mtl', dest='mtl',
-            help='Input .MTL file')
-        self.parser.add_option('-s', '--saturation', dest='saturation',
-            help='Input saturation mask (see fmask_usgsLandsatSaturationMask.py)')
-        self.parser.add_option("-z", "--anglesfile", dest="anglesfile",
-            help="Image of sun and satellite angles (see fmask_usgsLandsatMakeAnglesImage.py)")
-        self.parser.add_option('-o', '--output', dest='output',
-            help='output cloud mask')
-        self.parser.add_option('-v', '--verbose', dest='verbose', default=False,
-            action='store_true', help='verbose output')
-        self.parser.add_option('-k', '--keepintermediates', dest='keepintermediates', 
-            default=False, action='store_true', help='verbose output')
-        self.parser.add_option('-e', '--tempdir', dest='tempdir',
-            default='.', help="Temp directory to use (default=%default)")
-            
-        (options, self.args) = self.parser.parse_args()
-        self.__dict__.update(options.__dict__)
-        
-        if (self.thermal is None or self.anglesfile is None or 
-                self.mtl is None is None or self.output is None
-                or self.toa is None):
-            self.parser.print_help()
-            sys.exit(1)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-t', '--thermal', help='Input stack of thermal bands')
+    parser.add_argument('-a', '--toa', 
+        help='Input stack of TOA reflectance (see fmask_usgsLandsatTOA.py)')
+    parser.add_argument('-m', '--mtl', help='Input .MTL file')
+    parser.add_argument('-s', '--saturation', 
+        help='Input saturation mask (see fmask_usgsLandsatSaturationMask.py)')
+    parser.add_argument("-z", "--anglesfile", 
+        help="Image of sun and satellite angles (see fmask_usgsLandsatMakeAnglesImage.py)")
+    parser.add_argument('-o', '--output', dest='output',
+        help='output cloud mask')
+    parser.add_argument('-v', '--verbose', default=False,
+        action='store_true', help='verbose output')
+    parser.add_argument('-k', '--keepintermediates', dest='keepintermediates', 
+        default=False, action='store_true', help='verbose output')
+    parser.add_argument('-e', '--tempdir', 
+        default='.', help="Temp directory to use (default=%default)")
+    parser.add_argument("--mincloudsize", type=int, default=0, 
+        help="Mininum cloud size to retain, before any buffering. Default=%(default)s)")
+
+    cmdargs = parser.parse_args()
+
+    if (cmdargs.thermal is None or cmdargs.anglesfile is None or 
+            cmdargs.mtl is None is None or cmdargs.output is None
+            or cmdargs.toa is None):
+        cmdargs.parser.print_help()
+        sys.exit(1)
+    
+    return cmdargs
+
             
 def mainRoutine():
     """
     Main routine that calls fmask
     """
-    cmdargs = CmdArgs()
+    cmdargs = getCmdargs()
     
     # 1040nm thermal band should always be the first (or only) band in a
     # stack of Landsat thermal bands
@@ -103,6 +105,7 @@ def mainRoutine():
     fmaskConfig.setKeepIntermediates(cmdargs.keepintermediates)
     fmaskConfig.setVerbose(cmdargs.verbose)
     fmaskConfig.setTempDir(cmdargs.tempdir)
+    fmaskConfig.setMinCloudSize(cmdargs.mincloudsize)
     
     fmask.doFmask(fmaskFilenames, fmaskConfig)
     
