@@ -51,6 +51,10 @@ def getCmdargs():
         default='.', help="Temp directory to use (default='%(default)s')")
     parser.add_argument("--mincloudsize", type=int, default=0, 
         help="Mininum cloud size to retain, before any buffering. Default=%(default)s)")
+    parser.add_argument("--cloudbufferdistance", type=float, default=150,
+        help="Distance (in metres) to buffer final cloud objects (default=%(default)s)")
+    parser.add_argument("--shadowbufferdistance", type=float, default=300,
+        help="Distance (in metres) to buffer final cloud shadow objects (default=%(default)s)")
 
     cmdargs = parser.parse_args()
 
@@ -112,10 +116,8 @@ def mainRoutine():
     
     # Work out a suitable buffer size, in pixels, dependent on the resolution of the input TOA image
     toaImgInfo = fileinfo.ImageInfo(cmdargs.toa)
-    CLOUD_BUFF_DIST = 150
-    SHADOW_BUFF_DIST = 300
-    fmaskConfig.setCloudBufferSize(int(CLOUD_BUFF_DIST / toaImgInfo.xRes))
-    fmaskConfig.setShadowBufferSize(int(SHADOW_BUFF_DIST / toaImgInfo.xRes))
+    fmaskConfig.setCloudBufferSize(int(cmdargs.cloudbufferdistance / toaImgInfo.xRes))
+    fmaskConfig.setShadowBufferSize(int(cmdargs.shadowbufferdistance / toaImgInfo.xRes))
     
     fmask.doFmask(fmaskFilenames, fmaskConfig)
     
