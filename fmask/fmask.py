@@ -19,8 +19,7 @@ Taken from Neil Flood's implementation by permission.
 The notation and variable names are largely taken from the paper. Equation
 numbers are also from the paper. 
 
-Input is a top of atmosphere (TOA) reflectance file, and outputs
-are cloud, cloud shadow and snow mask files. 
+Input is a top of atmosphere (TOA) reflectance file. 
 
 The output file is a single thematic raster layer with codes representing
 null, clear, cloud, shadow, snow and water. These are the values 0-5
@@ -73,17 +72,23 @@ from . import fmaskerrors
 # so we can check if thermal all zeroes
 from . import zerocheck
 
-#: bands in the saturation mask, if supplied
+# Bands in the saturation mask, if supplied
 SATURATION_BLUE = 0
 SATURATION_GREEN = 1
 SATURATION_RED = 2
 
 # The values used in the final output raster
+#: Output pixel value for null
 OUTCODE_NULL = 0
+#: Output pixel value for clear land
 OUTCODE_CLEAR = 1
+#: Output pixel value for cloud
 OUTCODE_CLOUD = 2
+#: Output pixel value for cloud shadow
 OUTCODE_SHADOW = 3
+#: Output pixel value for snow
 OUTCODE_SNOW = 4
+#: Output pixel value for water
 OUTCODE_WATER = 5
     
 def doFmask(fmaskFilenames, fmaskConfig):
@@ -186,7 +191,7 @@ def doFmask(fmaskFilenames, fmaskConfig):
     
     return retVal
 
-#: An offset so we can scale BT(deg C) to the range 0-255, for use in histograms.
+#: An offset so we can scale brightness temperature (BT, in deg C) to the range 0-255, for use in histograms.
 BT_OFFSET = 176    
 
 BT_HISTSIZE = 256
@@ -564,12 +569,15 @@ def doCloudLayerFinalPass(fmaskFilenames, fmaskConfig, pass1file, pass2file,
     otherargs.landThreshold = landThreshold
     otherargs.Tlow = Tlow
     otherargs.thermalInfo = fmaskConfig.thermalInfo
+    otherargs.minCloudSize = fmaskConfig.minCloudSize_pixels
 
     (fd, outfiles.cloudmask) = tempfile.mkstemp(prefix='interimcloud', 
         dir=fmaskConfig.tempDir, suffix=fmaskConfig.defaultExtension)
     os.close(fd)
     # Need overlap so we can do Fmask's 3x3 fill-in
     overlap = 1
+    # Also need overlap for cloud size filter
+    overlap = max(overlap, fmaskConfig.minCloudSize_pixels)
         
     controls.setOverlap(overlap)
     controls.setWindowXsize(RIOS_WINDOW_SIZE)
@@ -614,6 +622,14 @@ def cloudFinalPass(info, inputs, outputs, otherargs):
     # Equation 18
     cloudmask = cloudmask1 | cloudmask2 | cloudmask3 | cloudmask4
     cloudmask[nullmask] = 0
+    
+    # If required, filter out small clouds. 
+    if otherargs.minCloudSize > 1:
+        (clumps, numClumps) = label(cloudmask)
+        clumpSizes = numpy.bincount(clumps.flatten())
+        clumpSizes[0] = 0       # Knock out the size of the null area
+        sizeImg = clumpSizes[clumps]
+        cloudmask[sizeImg < otherargs.minCloudSize] = 0
 
     # Apply the prescribed 3x3 buffer. According to Zhu&Woodcock (page 87, end of section 3.1.2) 
     # they set a pixel to cloud if 5 or more of its 3x3 neighbours is cloud. 
@@ -1001,8 +1017,11 @@ def matchShadows(fmaskConfig, interimCloudmask, potentialShadowsFile,
     # Now apply a 3-pixel buffer, as per section 3.2 (2nd-last paragraph)
     # I have the buffer size settable from the commandline, with our default
     # being larger than the original. 
-    kernel = makeBufferKernel(fmaskConfig.shadowBufferSize)
-    shadowmaskBuffered = maximum_filter(shadowmask, footprint=kernel)
+    if fmaskConfig.shadowBufferSize > 0:
+        kernel = makeBufferKernel(fmaskConfig.shadowBufferSize)
+        shadowmaskBuffered = maximum_filter(shadowmask, footprint=kernel)
+    else:
+        shadowmaskBuffered = shadowmask
 
     driver = gdal.GetDriverByName(applier.DEFAULTDRIVERNAME)
     ds = driver.Create(interimShadowmask, xsize, ysize, 1, gdal.GDT_Byte,

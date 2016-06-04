@@ -23,41 +23,46 @@ from __future__ import print_function, division
 
 import sys
 import os
-import optparse
+import argparse
 import numpy
 import tempfile
 
 from rios import fileinfo
 
-from fmask import fmask
 from fmask import config
+from fmask import fmask
 
-class CmdArgs(object):
+def getCmdargs():
     """
-    Class for processing command line arguments
+    Get command line arguments
     """
-    def __init__(self):
-        self.parser = optparse.OptionParser()
-        self.parser.add_option('-a', '--toa', dest='toa',
-            help='Input stack of TOA reflectance (as supplied by ESA)')
-        self.parser.add_option('-z', '--anglesfile', dest='anglesfile', 
-            help=("Input angles file containing satellite and sun azimuth and zenith. " +
-                "See fmask_sentinel2makeAnglesImage.py for assistance in creating this"))
-        self.parser.add_option('-o', '--output', dest='output',
-            help='output cloud mask')
-        self.parser.add_option('-v', '--verbose', dest='verbose', default=False,
-            action='store_true', help='verbose output')
-        self.parser.add_option('-k', '--keepintermediates', dest='keepintermediates', 
-            default=False, action='store_true', help='verbose output')
-        self.parser.add_option('-e', '--tempdir', dest='tempdir',
-            default='.', help="Temp directory to use (default=%default)")
-            
-        (options, self.args) = self.parser.parse_args()
-        self.__dict__.update(options.__dict__)
-        
-        if self.output is None or self.toa is None or self.anglesfile is None:
-            self.parser.print_help()
-            sys.exit(1)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-a', '--toa', 
+        help='Input stack of TOA reflectance (as supplied by ESA)')
+    parser.add_argument('-z', '--anglesfile', 
+        help=("Input angles file containing satellite and sun azimuth and zenith. " +
+            "See fmask_sentinel2makeAnglesImage.py for assistance in creating this"))
+    parser.add_argument('-o', '--output', help='Output cloud mask')
+    parser.add_argument('-v', '--verbose', dest='verbose', default=False,
+        action='store_true', help='verbose output')
+    parser.add_argument('-k', '--keepintermediates', 
+        default=False, action='store_true', help='Keep intermediate temporary files (normally deleted)')
+    parser.add_argument('-e', '--tempdir', 
+        default='.', help="Temp directory to use (default='%(default)s')")
+    parser.add_argument("--mincloudsize", type=int, default=0, 
+        help="Mininum cloud size to retain, before any buffering. Default=%(default)s)")
+    parser.add_argument("--cloudbufferdistance", type=float, default=150,
+        help="Distance (in metres) to buffer final cloud objects (default=%(default)s)")
+    parser.add_argument("--shadowbufferdistance", type=float, default=300,
+        help="Distance (in metres) to buffer final cloud shadow objects (default=%(default)s)")
+
+    cmdargs = parser.parse_args()
+
+    if cmdargs.output is None or cmdargs.toa is None or cmdargs.anglesfile is None:
+        parser.print_help()
+        sys.exit(1)
+    
+    return cmdargs
 
 
 def checkAnglesFile(inputAnglesFile, toafile):
@@ -74,7 +79,7 @@ def checkAnglesFile(inputAnglesFile, toafile):
     anglesImgInfo = fileinfo.ImageInfo(inputAnglesFile)
     
     outputAnglesFile = inputAnglesFile
-    if (toaImgInfo.xRes != anglesImgInfo.xRes) or (toaImgInfo.yRes != angleImgInfo.yRes):
+    if (toaImgInfo.xRes != anglesImgInfo.xRes) or (toaImgInfo.yRes != anglesImgInfo.yRes):
         (fd, vrtName) = tempfile.mkstemp(prefix='angles', suffix='.vrt')
         os.close(fd)
         cmdFmt = ("gdalwarp -q -of VRT -tr {xres} {yres} -te {xmin} {ymin} {xmax} {ymax} "+
@@ -92,7 +97,7 @@ def mainRoutine():
     """
     Main routine that calls fmask
     """
-    cmdargs = CmdArgs()
+    cmdargs = getCmdargs()
     
     anglesfile = checkAnglesFile(cmdargs.anglesfile, cmdargs.toa)
     anglesInfo = config.AnglesFileInfo(anglesfile, 3, anglesfile, 2, anglesfile, 1, anglesfile, 0)
@@ -107,14 +112,12 @@ def mainRoutine():
     fmaskConfig.setVerbose(cmdargs.verbose)
     fmaskConfig.setTempDir(cmdargs.tempdir)
     fmaskConfig.setTOARefScaling(10000.0)
+    fmaskConfig.setMinCloudSize(cmdargs.mincloudsize)
     
     # Work out a suitable buffer size, in pixels, dependent on the resolution of the input TOA image
     toaImgInfo = fileinfo.ImageInfo(cmdargs.toa)
-    CLOUD_BUFF_DIST = 150
-    SHADOW_BUFF_DIST = 300
-    fmaskConfig.setCloudBufferSize(int(CLOUD_BUFF_DIST / toaImgInfo.xRes))
-    fmaskConfig.setShadowBufferSize(int(SHADOW_BUFF_DIST / toaImgInfo.xRes))
-    
+    fmaskConfig.setCloudBufferSize(int(cmdargs.cloudbufferdistance / toaImgInfo.xRes))
+    fmaskConfig.setShadowBufferSize(int(cmdargs.shadowbufferdistance / toaImgInfo.xRes))
     
     fmask.doFmask(fmaskFilenames, fmaskConfig)
     
@@ -122,6 +125,7 @@ def mainRoutine():
         # Must have been a temporary vrt, so remove it
         os.remove(anglesfile)
     
+
 if __name__ == '__main__':
     mainRoutine()
 
