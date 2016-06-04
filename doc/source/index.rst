@@ -161,6 +161,7 @@ Python developer documentation
     Configuring the fmask run <fmask_config>
     Creating Top of Atmosphere rasters for Landsat <fmask_landsatTOA>
     fmask_saturationcheck
+    fmask_landsatangles
     fmask_zerocheck
     fmask_fillminima
     fmask_valueindexes
