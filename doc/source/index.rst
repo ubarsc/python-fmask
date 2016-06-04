@@ -55,6 +55,9 @@ The examples shown below use the given example wrappers.
 Command Line Examples
 ---------------------
 
+All the commandline programs given use argparse to handle commandline arguments, and hence will 
+respond sensibly to the --help option. Some have options to modify their behaviour. 
+
 Please note that the output format used is defined by `RIOS <http://rioshome.org/>`_. This defaults to HFA (.img). 
 See `RIOS documentation <http://rioshome.org/rios_imagewriter.html#rios.imagewriter.setDefaultDriver>`_
 for more information and how to change this using the environment variable $RIOS_DFLT_DRIVER.
