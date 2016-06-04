@@ -54,7 +54,7 @@ from __future__ import print_function, division
 import sys
 import argparse
 
-from fmask import angles
+from fmask import landsatangles
 from fmask import config
 
 from rios import fileinfo
@@ -86,13 +86,13 @@ def mainRoutine():
     mtlInfo = config.readMTLFile(cmdargs.mtl)
     
     imgInfo = fileinfo.ImageInfo(cmdargs.templateimg)
-    corners = angles.findImgCorners(cmdargs.templateimg, imgInfo)
-    nadirLine = angles.findNadirLine(corners)
+    corners = landsatangles.findImgCorners(cmdargs.templateimg, imgInfo)
+    nadirLine = landsatangles.findNadirLine(corners)
     
-    extentSunAngles = angles.sunAnglesForExtent(imgInfo, mtlInfo)
-    satAzimuth = angles.satAzLeftRight(nadirLine)
+    extentSunAngles = landsatangles.sunAnglesForExtent(imgInfo, mtlInfo)
+    satAzimuth = landsatangles.satAzLeftRight(nadirLine)
     
-    angles.makeAnglesImage(cmdargs, nadirLine, extentSunAngles, satAzimuth, imgInfo)
+    landsatangles.makeAnglesImage(cmdargs, nadirLine, extentSunAngles, satAzimuth, imgInfo)
 
 if __name__ == "__main__":
     mainRoutine()
