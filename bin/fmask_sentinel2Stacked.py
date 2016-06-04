@@ -29,8 +29,8 @@ import tempfile
 
 from rios import fileinfo
 
-from fmask import fmask
 from fmask import config
+from fmask import fmask
 
 def getCmdargs():
     """
@@ -49,6 +49,8 @@ def getCmdargs():
         default=False, action='store_true', help='Keep intermediate temporary files (normally deleted)')
     parser.add_argument('-e', '--tempdir', 
         default='.', help="Temp directory to use (default='%(default)s')")
+    parser.add_argument("--mincloudsize", type=int, default=0, 
+        help="Mininum cloud size to retain, before any buffering. Default=%(default)s)")
 
     cmdargs = parser.parse_args()
 
@@ -73,7 +75,7 @@ def checkAnglesFile(inputAnglesFile, toafile):
     anglesImgInfo = fileinfo.ImageInfo(inputAnglesFile)
     
     outputAnglesFile = inputAnglesFile
-    if (toaImgInfo.xRes != anglesImgInfo.xRes) or (toaImgInfo.yRes != angleImgInfo.yRes):
+    if (toaImgInfo.xRes != anglesImgInfo.xRes) or (toaImgInfo.yRes != anglesImgInfo.yRes):
         (fd, vrtName) = tempfile.mkstemp(prefix='angles', suffix='.vrt')
         os.close(fd)
         cmdFmt = ("gdalwarp -q -of VRT -tr {xres} {yres} -te {xmin} {ymin} {xmax} {ymax} "+
@@ -106,6 +108,7 @@ def mainRoutine():
     fmaskConfig.setVerbose(cmdargs.verbose)
     fmaskConfig.setTempDir(cmdargs.tempdir)
     fmaskConfig.setTOARefScaling(10000.0)
+    fmaskConfig.setMinCloudSize(cmdargs.mincloudsize)
     
     # Work out a suitable buffer size, in pixels, dependent on the resolution of the input TOA image
     toaImgInfo = fileinfo.ImageInfo(cmdargs.toa)
@@ -114,13 +117,13 @@ def mainRoutine():
     fmaskConfig.setCloudBufferSize(int(CLOUD_BUFF_DIST / toaImgInfo.xRes))
     fmaskConfig.setShadowBufferSize(int(SHADOW_BUFF_DIST / toaImgInfo.xRes))
     
-    
     fmask.doFmask(fmaskFilenames, fmaskConfig)
     
     if anglesfile != cmdargs.anglesfile:
         # Must have been a temporary vrt, so remove it
         os.remove(anglesfile)
     
+
 if __name__ == '__main__':
     mainRoutine()
 
