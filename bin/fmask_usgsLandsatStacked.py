@@ -27,6 +27,8 @@ import argparse
 from fmask import fmask
 from fmask import config
 
+from rios import fileinfo
+
 
 def getCmdargs():
     """
@@ -51,6 +53,10 @@ def getCmdargs():
         default='.', help="Temp directory to use (default=%default)")
     parser.add_argument("--mincloudsize", type=int, default=0, 
         help="Mininum cloud size to retain, before any buffering. Default=%(default)s)")
+    parser.add_argument("--cloudbufferdistance", type=float, default=150,
+        help="Distance (in metres) to buffer final cloud objects (default=%(default)s)")
+    parser.add_argument("--shadowbufferdistance", type=float, default=300,
+        help="Distance (in metres) to buffer final cloud shadow objects (default=%(default)s)")
 
     cmdargs = parser.parse_args()
 
@@ -106,6 +112,11 @@ def mainRoutine():
     fmaskConfig.setVerbose(cmdargs.verbose)
     fmaskConfig.setTempDir(cmdargs.tempdir)
     fmaskConfig.setMinCloudSize(cmdargs.mincloudsize)
+
+    # Work out a suitable buffer size, in pixels, dependent on the resolution of the input TOA image
+    toaImgInfo = fileinfo.ImageInfo(cmdargs.toa)
+    fmaskConfig.setCloudBufferSize(int(cmdargs.cloudbufferdistance / toaImgInfo.xRes))
+    fmaskConfig.setShadowBufferSize(int(cmdargs.shadowbufferdistance / toaImgInfo.xRes))
     
     fmask.doFmask(fmaskFilenames, fmaskConfig)
     
