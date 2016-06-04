@@ -1017,8 +1017,11 @@ def matchShadows(fmaskConfig, interimCloudmask, potentialShadowsFile,
     # Now apply a 3-pixel buffer, as per section 3.2 (2nd-last paragraph)
     # I have the buffer size settable from the commandline, with our default
     # being larger than the original. 
-    kernel = makeBufferKernel(fmaskConfig.shadowBufferSize)
-    shadowmaskBuffered = maximum_filter(shadowmask, footprint=kernel)
+    if fmaskConfig.shadowBufferSize > 0:
+        kernel = makeBufferKernel(fmaskConfig.shadowBufferSize)
+        shadowmaskBuffered = maximum_filter(shadowmask, footprint=kernel)
+    else:
+        shadowmaskBuffered = shadowmask
 
     driver = gdal.GetDriverByName(applier.DEFAULTDRIVERNAME)
     ds = driver.Create(interimShadowmask, xsize, ysize, 1, gdal.GDT_Byte,
