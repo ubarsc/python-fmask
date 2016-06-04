@@ -56,7 +56,7 @@ Command Line Examples
 ---------------------
 
 All the commandline programs given use argparse to handle commandline arguments, and hence will 
-respond sensibly to the \--help option. Some have options to modify their behaviour. 
+respond sensibly to the \-\-help option. Some have options to modify their behaviour. 
 
 Please note that the output format used is defined by `RIOS <http://rioshome.org/>`_. This defaults to HFA (.img). 
 See `RIOS documentation <http://rioshome.org/rios_imagewriter.html#rios.imagewriter.setDefaultDriver>`_
@@ -109,7 +109,7 @@ The command line scripts supplied can process a Sentinel2 Level C granule from t
 Here is an example of how to do this. This example works at 20m resolution, but the 
 recipe can be varied as required. 
 
-This makes a stack of ALL the bands, at the 20m resolution (a compromise between speed and detail)
+This makes a stack of ALL the bands, at the 20m resolution (a compromise between speed and detail). 
 Bands are in order of numeric band number::
 
     gdalbuildvrt -resolution user -tr 20 20 -separate allbands.vrt S2*_B0[1-8].jp2 S2*_B8A.jp2 S2*_B09.jp2 S2*_B1[0-2].jp2
