@@ -17,12 +17,14 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """
 Functions relating to estimating the per-pixel sun and satellite angles for 
-a given Landsat image. 
+a given Landsat image. These are rough estimates, using the generic
+characteristics of the Landsat 5 platform, and are not particularly accurate,
+but good enough for the current purposes. 
 
 Historically, the USGS have not supplied satellite zenith/azimuth angles, and have only 
 supplied scene-centre values for sun zenith/azimuth angles. Since the satellite
 view geometry is important in correctly tracking a shadow when matching shadows
-to their respective clouds, the Fmask algorithm requires good estimates of all thes
+to their respective clouds, the Fmask algorithm requires good estimates of all these
 angles. The routines contained here are used to derive per-pixel estimates of 
 these angles. 
 
@@ -34,6 +36,26 @@ not be present.
 
 The core Fmask code in this package is adaptable enough to be configured for either 
 approach. 
+
+The general approach for satellite angles is to estimate the nadir line by running it
+down the middle of the image data area. The satellite azimuth is assumed to be
+at right angles to this nadir line, which is only roughly correct. For the whisk-broom 
+sensors on Landsat-5 and Landsat-7, this angle is not 90 degrees, but is affected by 
+earth rotation and is latitude dependent. For Landsat-8, the scan line is at 
+right angles, due to the compensation for earth rotation, but the push-broom is 
+made up of sub-modules which point in slightly different directions, giving 
+slightly different satellite azimuths along the scan line. None of these effects
+are included in the current estimates. The satellite zenith is estimated based on the
+nadir point, the scan-line, and the assumed satellite altitude, and includes the
+appropriate allowance for earth curvature. 
+
+Because this works by searching the imagery for the non-null area, and assumes that 
+this represents a full-swath image, it would not work for a subset of a full image. 
+
+The sun angles are approximated using the algorithm found in the Fortran code with
+6S (Second Simulation of the Satellite Signal in the Solar Spectrum). The subroutine
+in question is the POSSOL() routine. I translated the Fortran code into Python for
+inclusion here. 
 
 """
 from __future__ import print_function, division
