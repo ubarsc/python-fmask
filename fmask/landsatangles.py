@@ -15,6 +15,27 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+"""
+Functions relating to estimating the per-pixel sun and satellite angles for 
+a given Landsat image. 
+
+Historically, the USGS have not supplied satellite zenith/azimuth angles, and have only 
+supplied scene-centre values for sun satellite/azimuth angles. Since the satellite
+view geometry is important in correctly tracking a shadow when matching shadows
+to their respective clouds, the Fmask algorithm requires good estimates of all thes
+angles. The routines contained here are used to derive per-pixel estimates of 
+these angles. 
+
+As of mid-2016, the USGS are planning to supply sufficient information to calculate
+these angles directly from orbit ephemeris data. When that comes about, it seems likely
+that the need for the routines here will diminish, but any data downloaded from USGS
+prior to then will still require this approach, as the associated angle metadata will 
+not be present. 
+
+The core Fmask code in this package is adaptable enough to be configured for either 
+approach. 
+
+"""
 from __future__ import print_function, division
 
 import datetime
