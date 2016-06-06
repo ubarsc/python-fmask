@@ -1,5 +1,5 @@
-config
-=========
+landsatangles
+=============
 .. automodule:: fmask.landsatangles
    :members:
    :undoc-members:
