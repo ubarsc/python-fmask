@@ -306,21 +306,21 @@ def sunAnglesForPoints(latDeg, longDeg, hourGMT, jdp):
     return (sunAz, sunZen)
 
 
-def makeAnglesImage(cmdargs, nadirLine, extentSunAngles, satAzimuth, imgInfo):
+def makeAnglesImage(templateimg, outfile, nadirLine, extentSunAngles, satAzimuth, imgInfo):
     """
     Make a single output image file of the sun and satellite angles for every
     pixel in the template image.
 
     """
-    imgInfo  = fileinfo.ImageInfo(cmdargs.templateimg)
+    imgInfo  = fileinfo.ImageInfo(templateimg)
 
     infiles = applier.FilenameAssociations()
     outfiles = applier.FilenameAssociations()
     otherargs = applier.OtherInputs()
     controls = applier.ApplierControls()
 
-    infiles.img = cmdargs.templateimg
-    outfiles.angles = cmdargs.outfile
+    infiles.img = templateimg
+    outfiles.angles = outfile
 
     (ctrLat, ctrLong) = getCtrLatLong(imgInfo)
     otherargs.R = localRadius(ctrLat)
