@@ -20,7 +20,7 @@ Functions relating to estimating the per-pixel sun and satellite angles for
 a given Landsat image. 
 
 Historically, the USGS have not supplied satellite zenith/azimuth angles, and have only 
-supplied scene-centre values for sun satellite/azimuth angles. Since the satellite
+supplied scene-centre values for sun zenith/azimuth angles. Since the satellite
 view geometry is important in correctly tracking a shadow when matching shadows
 to their respective clouds, the Fmask algorithm requires good estimates of all thes
 angles. The routines contained here are used to derive per-pixel estimates of 
