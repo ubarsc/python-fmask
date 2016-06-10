@@ -1,0 +1,24 @@
+How to create a distribution of python-fmask. 
+
+1. Ensure that you have fetched and committed everything which needs to go in.
+2. Change the version number in the fmask/__init__.py. Version number
+   is of the form a.b.c, as discussed below. 
+   DON'T FORGET TO COMMIT THIS, BEFORE THE NEXT STEP!!!!
+3. Update the release notes page in the doco, by going through the change 
+   logs since the last release, and noting what has been done. 
+   COMMIT THIS CHANGE!!!
+4. Use "hg tag" to add a version number tag, e.g.
+    hg tag pythonfmask-0.3.1
+5. Create the distribution tarball, using
+    python setup.py sdist --formats=gztar,zip
+   This creates both a tar.gz and a zip, under a subdirectory called dist
+6. Upload these to bitbucket, under the downloads tab. 
+
+
+Version Numbers.
+The python-fmaskversion number is structured as A.B.C. 
+- The A number should change for major alterations, most particularly those 
+  which break backward compatability, or which involve major restructuring of 
+  code or data structures. 
+- The B number should change for introduction of significant new features
+- The C number should change for bug fixes or very minor changes. 
