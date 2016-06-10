@@ -13,7 +13,8 @@ Bug fixes
 Enhancements
   * Landsat angles code is now in a module, with a main program wrapper, consistent 
     with the rest of the package
-  * Added --cloudbufferdistance, --shadowbufferdistance and --mincloudsize options to
+  * Added :command:`--cloudbufferdistance`, :command:`--shadowbufferdistance` and 
+    :command:`--mincloudsize` options to
     main program wrappers (both Landsat and Sentinel-2) to give user control over these
     parameters
 
