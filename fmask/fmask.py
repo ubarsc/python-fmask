@@ -672,8 +672,9 @@ def doPotentialShadows(fmaskFilenames, fmaskConfig, NIR_17):
     potentialShadows = ((NIR_filled - NIR) > fmaskConfig.Eqn19NIRFillThresh)
     
     driver = gdal.GetDriverByName(applier.DEFAULTDRIVERNAME)
+    creationOptions = applier.dfltDriverOptions[applier.DEFAULTDRIVERNAME]
     outds = driver.Create(potentialShadowsFile, ds.RasterXSize, ds.RasterYSize, 
-                    1, gdal.GDT_Byte, applier.DEFAULTCREATIONOPTIONS)
+                    1, gdal.GDT_Byte, creationOptions)
     proj = ds.GetProjection()
     outds.SetProjection(proj)
     transform = ds.GetGeoTransform()
@@ -1024,8 +1025,9 @@ def matchShadows(fmaskConfig, interimCloudmask, potentialShadowsFile,
         shadowmaskBuffered = shadowmask
 
     driver = gdal.GetDriverByName(applier.DEFAULTDRIVERNAME)
+    creationOptions = applier.dfltDriverOptions[applier.DEFAULTDRIVERNAME]
     ds = driver.Create(interimShadowmask, xsize, ysize, 1, gdal.GDT_Byte,
-                applier.DEFAULTCREATIONOPTIONS)
+                creationOptions)
     ds.SetProjection(proj)
     ds.SetGeoTransform(geotrans)
     band = ds.GetRasterBand(1)
