@@ -136,7 +136,7 @@ corresponds to which wavelength band.
 Downloads
 ---------
 Get the source from `BitBucket <https://bitbucket.org/chchrsc/python-fmask/downloads>`_.
-Release notes for each version can be read here `releasenotes`
+Release notes for each version can be read in :doc:`releasenotes`
 
 `Conda <http://conda.pydata.org/miniconda.html#miniconda>`_ packages are available under the 'rios' channel.
 Once you have installed `Conda <http://conda.pydata.org/miniconda.html#miniconda>`_, run the following commands on the command line to install python-fmask: ::
