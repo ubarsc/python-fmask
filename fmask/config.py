@@ -475,7 +475,7 @@ def readThermalInfoFromLandsatMTL(mtlfile, thermalBand1040um=0):
             k2 = float(mtlData[s])
         else:
             # drop back to our own values if not in file
-            k2 = LANDSAT_K1_DICT[sensor]
+            k2 = LANDSAT_K2_DICT[sensor]
             
     if gain is not None and offset is not None and k1 is not None and k2 is not None:
         thermalInfo = ThermalFileInfo(thermalBand1040um, gain, 
