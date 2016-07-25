@@ -16,13 +16,12 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 from __future__ import print_function, division
 
+import os
 import numpy
 
 # Fail slightly less drastically when running from ReadTheDocs
-try:
+if os.getenv('READTHEDOCS', default='False') != 'True':
     from . import _valueindexes
-except ImportError:
-    pass
 
 class ValueIndexesError(Exception):
     pass
