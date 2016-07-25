@@ -27,11 +27,16 @@ except ImportError:
     from distutils.core import setup
     withExtensions = False
 
+# use the latest numpy API
+NUMPY_MACROS = ('NPY_NO_DEPRECATED_API', 'NPY_1_7_API_VERSION')
+
 if withExtensions:
     # This is for a normal build
     fillminimaC = Extension(name='_fillminima', 
+                define_macros=[NUMPY_MACROS],
                 sources=['src/fillminima.c'])
     valueIndexesC = Extension(name='_valueindexes',
+                define_macros=[NUMPY_MACROS],
                 sources=['src/valueindexes.c'])
     extensionsList = [fillminimaC, valueIndexesC]
 else:
