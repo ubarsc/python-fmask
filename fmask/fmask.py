@@ -237,6 +237,22 @@ def doPotentialCloudFirstPass(fmaskFilenames, fmaskConfig, missingThermal):
     otherargs.clearLandBT_hist = numpy.zeros(BT_HISTSIZE, dtype=numpy.uint32)
     otherargs.clearLandB4_hist = numpy.zeros(BT_HISTSIZE, dtype=numpy.uint32)
     otherargs.fmaskConfig = fmaskConfig
+    
+    # Which reflective bands do we use to make a null mask. The numbers being set here 
+    # are zero-based index numbers for use as array indexes. It should be just all bands, 
+    # but because of the Sentinel-2 madness, we have to make special cases. 
+    if fmaskConfig.sensor == config.FMASK_LANDSAT47:
+        nullBandNdx = [config.BAND_BLUE, config.BAND_GREEN, config.BAND_RED, config.BAND_NIR, 
+            config.BAND_SWIR1, config.BAND_SWIR2]
+    elif fmaskConfig.sensor == config.FMASK_LANDSAT8:
+        nullBandNdx = [config.BAND_BLUE, config.BAND_GREEN, config.BAND_RED, config.BAND_NIR, 
+            config.BAND_SWIR1, config.BAND_SWIR2, config.BAND_CIRRUS]
+    elif fmaskConfig.sensor == config.FMASK_SENTINEL2:
+        # For Sentinel-2, only use the visible bands to define the null mask. This is because ESA
+        # are leaving a lot of spurious nulls in their imagery, most particularly in the IR bands
+        # and the cirrus band. 
+        nullBandNdx = [config.BAND_BLUE, config.BAND_GREEN, config.BAND_RED]
+    otherargs.bandsForRefNull = numpy.array([fmaskConfig.bands[i] for i in nullBandNdx])
 
     applier.apply(potentialCloudFirstPass, infiles, outfiles, otherargs, controls=controls)
     
@@ -280,7 +296,7 @@ def potentialCloudFirstPass(info, inputs, outputs, otherargs):
     if refNull is None:
         refNull = 0
     # Special mask needed only for resets in final pass
-    refNullmask = (inputs.toaref == refNull).any(axis=0)
+    refNullmask = (inputs.toaref[otherargs.bandsForRefNull] == refNull).any(axis=0)
     if hasattr(inputs, 'thermal'):
         thermalNull = info.getNoDataValueFor(inputs.thermal)
         if thermalNull is None:
