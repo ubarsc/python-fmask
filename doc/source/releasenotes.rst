@@ -1,6 +1,17 @@
 Release Notes
 =============
 
+Version 0.4.1 (2016-09-01)
+--------------------------
+
+Bug Fixes
+  * Fixed fall-back default values for Landsat brightness temperature equation constants, 
+    as required when processing older USGS files which do not have these present in the MTL file. 
+  * For Sentinel-2 only, added a work-around for the alarming random null pixels which
+    ESA leave in the cirrus band. This avoids leaving corresponding null pixels in the 
+    resulting output masks. 
+
+
 Version 0.4.0 (2016-06-10)
 --------------------------
 
