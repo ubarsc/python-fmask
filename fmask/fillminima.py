@@ -28,15 +28,13 @@ represent potential shadow objects.
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import os
 import numpy
 from scipy.ndimage import grey_erosion, grey_dilation, minimum_filter
 
 # Fail slightly less drastically when running from ReadTheDocs
-try:
+if os.getenv('READTHEDOCS', default='False') != 'True':
     from . import _fillminima
-except ImportError:
-    pass
-
 
 def fillMinima(img, nullval, boundaryval):
     """
