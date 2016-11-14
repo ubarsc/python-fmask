@@ -23,7 +23,7 @@ from __future__ import print_function, division
 
 import sys
 import numpy
-from rios import applier, cuiprogress
+from rios import applier, cuiprogress, fileinfo
 from . import fmask
 from . import config
 
@@ -93,7 +93,7 @@ def riosTOA(info, inputs, outputs, otherinputs):
     nbands = inputs.infile.shape[0]
 
     infile = inputs.infile.astype(numpy.float)
-    inIgnore = info.getNoDataValueFor(inputs.infile)
+    inIgnore = otherinputs.inNull
     if inIgnore is None:
         inIgnore = 0
 
@@ -161,6 +161,8 @@ def makeTOAReflectance(infile, mtlFile, anglesfile, outfile):
     otherinputs.offsets = offsets
     otherinputs.anglesToRadians = 0.01
     otherinputs.outNull = 32767
+    imginfo = fileinfo.ImageInfo(infile)
+    otherinputs.inNull = imginfo.nodataval[0]
 
     controls = applier.ApplierControls()
     controls.progress = cuiprogress.GDALProgressBar()
