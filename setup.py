@@ -15,6 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import sys
 import glob
 import fmask
 
@@ -44,14 +45,19 @@ else:
     from distutils.core import setup
     extensionsList = []
 
-
+scriptList = glob.glob("bin/*.py")
+if sys.platform == 'win32':
+    # include any .bat file helpers also (just one at this stage)
+    batList = glob.glob("bin/*.bat")
+    scriptList.extend(batList)
+    
 # do the setup
 setup( name = 'python-fmask',
         version = fmask.__version__,
         description = 'Module to implement the fmask cloud masking algorithm (Zhu, Wang & Woodcock 2015)',
         author = 'Neil Flood',
         author_email = 'neil.flood@dsiti.qld.gov.au',
-        scripts = glob.glob("bin/*.py"),
+        scripts = scriptList,
         packages = ['fmask'],
         ext_package = 'fmask',
         ext_modules = extensionsList,

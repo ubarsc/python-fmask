@@ -64,8 +64,8 @@ See `RIOS documentation <http://rioshome.org/rios_imagewriter.html#rios.imagewri
 for more information and how to change this using the environment variable $RIOS_DFLT_DRIVER.
 
 **Note:** these examples are for use in a Unix/Linux shell so that the filename wildcards
-get expanded properly. Windows users should prefix these commands with "python PATH\\TO\\fmask_expandWildcards.py" where 
-PATH\\TO\\fmask_expandWildcards.py is the output of "where fmask_expandWildcards.py".
+get expanded properly. Windows users should prefix these commands with "fmask_expandWildcards" so that 
+the commands get run with the wildcards expanded as they do in Unix/Linux.
 
 USGS Landsat
 ^^^^^^^^^^^^
