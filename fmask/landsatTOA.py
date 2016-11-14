@@ -23,6 +23,7 @@ from __future__ import print_function, division
 
 import sys
 import numpy
+from osgeo import gdal
 from rios import applier, cuiprogress, fileinfo
 from . import fmask
 from . import config
@@ -167,8 +168,14 @@ def makeTOAReflectance(infile, mtlFile, anglesfile, outfile):
     controls = applier.ApplierControls()
     controls.progress = cuiprogress.GDALProgressBar()
     controls.setStatsIgnore(otherinputs.outNull)
+    controls.setCalcStats(False)
     
     applier.apply(riosTOA, inputs, outputs, otherinputs, controls=controls)
+    
+    # Explicitly set the null value in the output
+    ds = gdal.Open(outfile, gdal.GA_Update)
+    for i in range(ds.RasterCount):
+        ds.GetRasterBand(i+1).SetNoDataValue(otherinputs.outNull)
 
 if __name__ == '__main__':
 
