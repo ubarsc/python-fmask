@@ -64,6 +64,11 @@ def fillMinima(img, nullval, boundaryval):
         img2[:, -1] = img[:, -1]
         (boundaryRows, boundaryCols) = numpy.where(img2!=hMax)
 
+    # on some systems (32 bit only?) numpy.where returns int32
+    # rather than int64. Convert so we don't have to handle both in C.
+    boundaryRows = boundaryRows.astype(numpy.int64)
+    boundaryCols = boundaryCols.astype(numpy.int64)
+
     _fillminima.fillMinima(img, img2, hMin, hMax, nullmask, boundaryval,
                         boundaryRows, boundaryCols)    
     
