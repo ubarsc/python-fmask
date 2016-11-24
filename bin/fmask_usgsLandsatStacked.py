@@ -50,7 +50,7 @@ def getCmdargs():
     parser.add_argument('-k', '--keepintermediates', dest='keepintermediates', 
         default=False, action='store_true', help='verbose output')
     parser.add_argument('-e', '--tempdir', 
-        default='.', help="Temp directory to use (default=%default)")
+        default='.', help="Temp directory to use (default=%(default)s)")
     parser.add_argument("--mincloudsize", type=int, default=0, 
         help="Mininum cloud size to retain, before any buffering. Default=%(default)s)")
     parser.add_argument("--cloudbufferdistance", type=float, default=150,
@@ -63,7 +63,7 @@ def getCmdargs():
     if (cmdargs.thermal is None or cmdargs.anglesfile is None or 
             cmdargs.mtl is None is None or cmdargs.output is None
             or cmdargs.toa is None):
-        cmdargs.parser.print_help()
+        parser.print_help()
         sys.exit(1)
     
     return cmdargs
