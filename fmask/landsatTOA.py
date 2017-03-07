@@ -24,6 +24,7 @@ from __future__ import print_function, division
 import sys
 import numpy
 from osgeo import gdal
+gdal.UseExceptions()
 from rios import applier, cuiprogress, fileinfo
 from . import fmask
 from . import config
