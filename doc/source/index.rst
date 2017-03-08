@@ -113,16 +113,20 @@ recipe can be varied as required.
 This makes a stack of ALL the bands, at the 20m resolution (a compromise between speed and detail). 
 Bands are in order of numeric band number::
 
-    gdalbuildvrt -resolution user -tr 20 20 -separate allbands.vrt S2*_B0[1-8].jp2 S2*_B8A.jp2 S2*_B09.jp2 S2*_B1[0-2].jp2
+    gdalbuildvrt -resolution user -tr 20 20 -separate allbands.vrt *_B0[1-8].jp2 *_B8A.jp2 *_B09.jp2 *_B1[0-2].jp2
 
 Make a separate image of the per-pixel sun and satellite angles. ::
 
-    fmask_sentinel2makeAnglesImage.py -i ../S2*.xml -o angles.img
+    fmask_sentinel2makeAnglesImage.py -i ../*.xml -o angles.img
     
 Now create the cloud mask output image. 
 Note that this assumes the bands are in a particular order (as created in the vrt, above)::
 
     fmask_sentinel2Stacked.py -a allbands.vrt -z angles.img -o cloud.img
+
+Note that the wild card patterns used in the above example commands are quite simple. This is 
+mainly so that they will work with both the old and the new file naming conventions which ESA 
+are using. Feel free to be more restrictive. 
 
 
 Re-wrapping and Re-configuring
