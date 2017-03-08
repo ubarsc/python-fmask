@@ -139,11 +139,14 @@ corresponds to which wavelength band.
 
 Downloads
 ---------
-Get the source from `BitBucket <https://bitbucket.org/chchrsc/python-fmask/downloads>`_.
-Release notes for each version can be read in :doc:`releasenotes`
+Get the source as a bundle from `BitBucket <https://bitbucket.org/chchrsc/python-fmask/downloads>`_.
+Release notes for each version can be read in :doc:`releasenotes`. To install from source, 
+read the INSTALL.txt file included inside the source bundle. 
 
-`Conda <http://conda.pydata.org/miniconda.html#miniconda>`_ packages are available under the 'rios' channel.
-Once you have installed `Conda <http://conda.pydata.org/miniconda.html#miniconda>`_, run the following commands on the command line to install python-fmask: ::
+Pre-built binary `Conda <http://conda.pydata.org/miniconda.html#miniconda>`_ packages are available 
+under the 'rios' channel. Once you have installed 
+`Conda <http://conda.pydata.org/miniconda.html#miniconda>`_, run the following commands on the 
+command line to install python-fmask: ::
 
     conda config --add channels conda-forge 
     conda config --add channels rios 
