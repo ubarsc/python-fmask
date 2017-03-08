@@ -15,6 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import os
 import sys
 import glob
 import fmask
@@ -27,6 +28,10 @@ try:
 except ImportError:
     from distutils.core import setup
     withExtensions = False
+
+# When building the sdist on Linux we want the extra .bat
+# files that are need for the Windows install. 
+INCLUDE_WINDOWS_BAT = int(os.getenv('FMASK_INCLUDEBAT', '0')) > 0
 
 # use the latest numpy API
 NUMPY_MACROS = ('NPY_NO_DEPRECATED_API', 'NPY_1_7_API_VERSION')
@@ -46,7 +51,7 @@ else:
     extensionsList = []
 
 scriptList = glob.glob("bin/*.py")
-if sys.platform == 'win32':
+if sys.platform == 'win32' or INCLUDE_WINDOWS_BAT:
     # include any .bat file helpers also (just one at this stage)
     batList = glob.glob("bin/*.bat")
     scriptList.extend(batList)
@@ -68,8 +73,7 @@ setup( name = 'python-fmask',
           'Programming Language :: Python :: 2',
           'Programming Language :: Python :: 2.7',
           'Programming Language :: Python :: 3',
-          'Programming Language :: Python :: 3.2',
-          'Programming Language :: Python :: 3.3',
           'Programming Language :: Python :: 3.4',
-          'Programming Language :: Python :: 3.5'])
+          'Programming Language :: Python :: 3.5',
+          'Programming Language :: Python :: 3.6'])
           

@@ -25,6 +25,7 @@ import numpy
 import scipy.constants
 
 from osgeo import gdal
+gdal.UseExceptions()
 from rios import applier
 from . import fmaskerrors
 

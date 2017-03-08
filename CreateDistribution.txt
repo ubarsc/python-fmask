@@ -10,8 +10,10 @@ How to create a distribution of python-fmask.
 4. Use "hg tag" to add a version number tag, e.g.
     hg tag pythonfmask-0.3.1
 5. Create the distribution tarball, using
-    python setup.py sdist --formats=gztar,zip
+    FMASK_INCLUDEBAT=1 python setup.py sdist --formats=gztar,zip
    This creates both a tar.gz and a zip, under a subdirectory called dist
+   This also ensures that the .bat files needed on Windows are included
+   when creating the tarball on Linux.
 6. Upload these to bitbucket, under the downloads tab. 
 
 

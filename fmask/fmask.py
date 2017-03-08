@@ -53,6 +53,7 @@ import tempfile
 import numpy
 numpy.seterr(all='raise')
 from osgeo import gdal
+gdal.UseExceptions()
 from scipy.ndimage import uniform_filter, maximum_filter, label
 import scipy.stats
 

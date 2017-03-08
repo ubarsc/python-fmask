@@ -1,6 +1,18 @@
 Release Notes
 =============
 
+Version 0.4.3 (2016-11-26)
+--------------------------
+
+Bug Fixes:
+  * Fix 32 bit builds
+  * Fix help message for fmask_usgsLandsatStacked.py
+
+Enhancements
+  * Helper .bat file for Windows to expand wildcards
+  * Changes to 'nodata' handling to make processing in parallel possible with RIOS
+
+
 Version 0.4.2 (2016-09-01)
 --------------------------
 

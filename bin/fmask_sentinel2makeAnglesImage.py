@@ -26,6 +26,7 @@ import argparse
 
 import numpy
 from osgeo import gdal
+gdal.UseExceptions()
 from osgeo import osr
 
 from rios import applier
