@@ -55,4 +55,5 @@ for arg in sys.argv[2:]:
         
 cmd = ' '.join(outList)
 #print(cmd)
-os.system(cmd)
+retval = os.system(cmd)
+sys.exit(retval)

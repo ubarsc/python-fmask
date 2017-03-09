@@ -17,5 +17,8 @@
 
 :: Run a Python script in the same dir as this, and same name, but .py extension
 :: with the same command line args
+:: By default the exit status of the last command in the file is
+:: the exit code for the script so we don't need to do anything else
+:: here to return the exit code from Python.
 @echo off
 python %~dpn0.py %*
