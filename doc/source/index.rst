@@ -144,12 +144,11 @@ Release notes for each version can be read in :doc:`releasenotes`. To install fr
 read the INSTALL.txt file included inside the source bundle. 
 
 Pre-built binary `Conda <http://conda.pydata.org/miniconda.html#miniconda>`_ packages are available 
-under the 'rios' channel. Once you have installed 
+under the 'conda-forge' channel. Once you have installed 
 `Conda <http://conda.pydata.org/miniconda.html#miniconda>`_, run the following commands on the 
 command line to install python-fmask: ::
 
     conda config --add channels conda-forge 
-    conda config --add channels rios 
     conda create -n myenv python-fmask 
     source activate myenv # omit 'source' on Windows
 
