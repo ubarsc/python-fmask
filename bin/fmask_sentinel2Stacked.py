@@ -60,7 +60,7 @@ def getCmdargs():
         help="Distance (in metres) to buffer final cloud objects (default=%(default)s)")
     params.add_argument("--shadowbufferdistance", type=float, default=300,
         help="Distance (in metres) to buffer final cloud shadow objects (default=%(default)s)")
-    defaultCloudProbThresh = 100 * config.FmaskConfig.Eqn17CloudProbThreshold
+    defaultCloudProbThresh = 100 * config.FmaskConfig.Eqn17CloudProbThresh
     params.add_argument("--cloudprobthreshold", type=float, default=defaultCloudProbThresh,
         help=("Cloud probability threshold (percentage) (default=%(default)s). This is "+
             "the constant term at the end of equation 17, given in the paper as 0.2 (i.e. 20%%). "+
@@ -125,7 +125,6 @@ def mainRoutine():
     fmaskConfig.setTOARefScaling(10000.0)
     fmaskConfig.setMinCloudSize(cmdargs.mincloudsize)
     fmaskConfig.setEqn17CloudProbThresh(cmdargs.cloudprobthreshold / 100)    # Note conversion from percentage
-    fmaskConfig.setGdalDriverName('GTiff')
     
     # Work out a suitable buffer size, in pixels, dependent on the resolution of the input TOA image
     toaImgInfo = fileinfo.ImageInfo(cmdargs.toa)

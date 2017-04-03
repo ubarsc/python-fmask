@@ -501,9 +501,9 @@ def doPotentialCloudSecondPass(fmaskFilenames, fmaskConfig, pass1file,
     # Equation 17
     landThreshold = scoreatpcnt(otherargs.lCloudProb_hist, 82.5)
     if landThreshold is not None:
-        landThreshold = landThreshold / PROB_SCALE + fmaskConfig.Eqn17CloudProbThreshold
+        landThreshold = landThreshold / PROB_SCALE + fmaskConfig.Eqn17CloudProbThresh
     else:
-        landThreshold = 0.2
+        landThreshold = fmaskConfig.Eqn17CloudProbThresh
     return (outfiles.pass2, landThreshold)
 
 
@@ -1203,6 +1203,7 @@ def finalizeAll(fmaskFilenames, fmaskConfig, interimCloudmask, interimShadowmask
     controls.setStatsIgnore(OUTCODE_NULL)
     controls.setWindowXsize(RIOS_WINDOW_SIZE)
     controls.setWindowYsize(RIOS_WINDOW_SIZE)
+    controls.setOutputDriverName(fmaskConfig.gdalDriverName)
     
     if fmaskConfig.cloudBufferSize > 0:
         otherargs.bufferkernel = makeBufferKernel(fmaskConfig.cloudBufferSize)

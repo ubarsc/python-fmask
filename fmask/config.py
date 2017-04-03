@@ -84,7 +84,10 @@ class FmaskConfig(object):
     
     # Constant term at the end of Equation 17. Zhu's MATLAB code now has this as a configurable
     # value, which they recommend as 22.5% (i.e. 0.225)
-    Eqn17CloudProbThreshold = 0.2
+    Eqn17CloudProbThresh = 0.2
+    
+    # GDAL driver for final output file
+    gdalDriverName = applier.DEFAULTDRIVERNAME
     
     def __init__(self, sensor):
         """
@@ -313,6 +316,14 @@ class FmaskConfig(object):
         
         """
         self.Eqn19NIRFillThresh = thresh
+    
+    def setGdalDriverName(self, driverName):
+        """
+        Change the GDAL driver used for writing the final output file. Default
+        value is taken from the default for the RIOS package, as per $RIOS_DFLT_DRIVER. 
+        """
+        self.gdalDriverName = driverName
+
 
 class FmaskFilenames(object):
     """
