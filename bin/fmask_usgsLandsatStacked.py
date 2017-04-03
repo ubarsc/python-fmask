@@ -51,12 +51,23 @@ def getCmdargs():
         default=False, action='store_true', help='verbose output')
     parser.add_argument('-e', '--tempdir', 
         default='.', help="Temp directory to use (default=%(default)s)")
-    parser.add_argument("--mincloudsize", type=int, default=0, 
-        help="Mininum cloud size to retain, before any buffering. Default=%(default)s)")
-    parser.add_argument("--cloudbufferdistance", type=float, default=150,
+
+    params = parser.add_argument_group(title="Configurable parameters", description="""
+        Changing these parameters will affect the way the algorithm works, and thus the 
+        quality of the final output masks. 
+        """)
+    params.add_argument("--mincloudsize", type=int, default=0, 
+        help="Mininum cloud size (in pixels) to retain, before any buffering. Default=%(default)s)")
+    params.add_argument("--cloudbufferdistance", type=float, default=150,
         help="Distance (in metres) to buffer final cloud objects (default=%(default)s)")
-    parser.add_argument("--shadowbufferdistance", type=float, default=300,
+    params.add_argument("--shadowbufferdistance", type=float, default=300,
         help="Distance (in metres) to buffer final cloud shadow objects (default=%(default)s)")
+    defaultCloudProbThresh = 100 * config.FmaskConfig.Eqn17CloudProbThreshold
+    params.add_argument("--cloudprobthreshold", type=float, default=defaultCloudProbThresh,
+        help=("Cloud probability threshold (percentage) (default=%(default)s). This is "+
+            "the constant term at the end of equation 17, given in the paper as 0.2 (i.e. 20%%). "+
+            "To reduce commission errors, increase this value, but this will also increase "+
+            "omission errors. "))
 
     cmdargs = parser.parse_args()
 
@@ -112,6 +123,7 @@ def mainRoutine():
     fmaskConfig.setVerbose(cmdargs.verbose)
     fmaskConfig.setTempDir(cmdargs.tempdir)
     fmaskConfig.setMinCloudSize(cmdargs.mincloudsize)
+    fmaskConfig.setCloudProbThresh(cmdargs.cloudprobthreshold / 100)    # Note conversion from percentage
 
     # Work out a suitable buffer size, in pixels, dependent on the resolution of the input TOA image
     toaImgInfo = fileinfo.ImageInfo(cmdargs.toa)
