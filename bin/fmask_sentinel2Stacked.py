@@ -124,7 +124,8 @@ def mainRoutine():
     fmaskConfig.setTempDir(cmdargs.tempdir)
     fmaskConfig.setTOARefScaling(10000.0)
     fmaskConfig.setMinCloudSize(cmdargs.mincloudsize)
-    fmaskConfig.setCloudProbThresh(cmdargs.cloudprobthreshold / 100)    # Note conversion from percentage
+    fmaskConfig.setEqn17CloudProbThresh(cmdargs.cloudprobthreshold / 100)    # Note conversion from percentage
+    fmaskConfig.setGdalDriverName('GTiff')
     
     # Work out a suitable buffer size, in pixels, dependent on the resolution of the input TOA image
     toaImgInfo = fileinfo.ImageInfo(cmdargs.toa)
