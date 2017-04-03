@@ -82,6 +82,10 @@ class FmaskConfig(object):
     cirrusProbRatio = 0.04
     Eqn19NIRFillThresh = 0.02
     
+    # Constant term at the end of Equation 17. Zhu's MATLAB code now has this as a configurable
+    # value, which they recommend as 22.5% (i.e. 0.225)
+    Eqn17CloudProbThreshold = 0.2
+    
     def __init__(self, sensor):
         """
         Pass in the sensor (one of: FMASK_LANDSAT47, FMASK_LANDSAT8 or
@@ -273,6 +277,16 @@ class FmaskConfig(object):
         
         """
         self.Eqn7Swir2Thresh = thresh
+        
+    def setEqn17CloudProbThresh(self, thresh):
+        """
+        Change the threshold used by Equation 17. The threshold
+        given here is the constant term added to the end of the equation
+        for the land probability threshold. Original paper had this as 0.2,
+        although Zhu et al's MATLAB code now defaults it to 0.225 (i.e. 22.5%)
+        
+        """
+        self.Eqn17CloudProbThresh = thresh
         
     def setEqn20ThermThresh(self, thresh):
         """

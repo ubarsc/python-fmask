@@ -501,7 +501,7 @@ def doPotentialCloudSecondPass(fmaskFilenames, fmaskConfig, pass1file,
     # Equation 17
     landThreshold = scoreatpcnt(otherargs.lCloudProb_hist, 82.5)
     if landThreshold is not None:
-        landThreshold = landThreshold / PROB_SCALE + 0.2
+        landThreshold = landThreshold / PROB_SCALE + fmaskConfig.Eqn17CloudProbThreshold
     else:
         landThreshold = 0.2
     return (outfiles.pass2, landThreshold)
