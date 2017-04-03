@@ -108,7 +108,8 @@ Sentinel2
 
 The command line scripts supplied can process a Sentinel2 Level C granule from the image directory. 
 Here is an example of how to do this. This example works at 20m resolution, but the 
-recipe can be varied as required. 
+recipe can be varied as required. Be warned, processing at 10m resolution would be considerably 
+slower, and is unlikely to be any more accurate. 
 
 This makes a stack of ALL the bands, at the 20m resolution (a compromise between speed and detail). 
 Bands are in order of numeric band number::
