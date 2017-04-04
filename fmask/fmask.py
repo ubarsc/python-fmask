@@ -397,7 +397,8 @@ def potentialCloudFirstPass(info, inputs, outputs, otherargs):
     
     # Equation 20
     # In two parts, in case we are missing thermal
-    snowmask = (ndsi > 0.15) & (ref[nir] > 0.11) & (ref[green] > 0.1)
+    snowmask = ((ndsi > 0.15) & (ref[nir] > fmaskConfig.Eqn20NirSnowThresh) & 
+        (ref[green] > fmaskConfig.Eqn20GreenSnowThresh))
     if hasattr(inputs, 'thermal'):
         snowmask = snowmask & (bt < fmaskConfig.Eqn20ThermThresh)
     snowmask[nullmask] = False

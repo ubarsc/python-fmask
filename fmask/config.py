@@ -79,6 +79,8 @@ class FmaskConfig(object):
     cirrusBandTestThresh = 0.01
     Eqn7Swir2Thresh = 0.03
     Eqn20ThermThresh = 3.8
+    Eqn20NirSnowThresh = 0.11
+    Eqn20GreenSnowThresh = 0.1
     cirrusProbRatio = 0.04
     Eqn19NIRFillThresh = 0.02
     
@@ -298,6 +300,22 @@ class FmaskConfig(object):
         
         """
         self.Eqn20ThermThresh = thresh
+        
+    def setEqn20NirSnowThresh(self, thresh):
+        """
+        Change the threshold used by Equation 20 (snow)
+        for NIR reflectance. This defaults to 0.11
+        
+        """
+        self.Eqn20NirSnowThresh = thresh
+        
+    def setEqn20GreenSnowThresh(self, thresh):
+        """
+        Change the threshold used by Equation 20 (snow)
+        for green reflectance. This defaults to 0.1
+        
+        """
+        self.Eqn20GreenSnowThresh = thresh
         
     def setCirrusProbRatio(self, ratio):
         """
