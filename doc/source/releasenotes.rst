@@ -1,6 +1,16 @@
 Release Notes
 =============
 
+Version 0.4.4 (2017-04-04)
+--------------------------
+
+Enhancements
+  * Added commandline options to set cloud probability threshold, and the two reflectance 
+    thresholds used for the snow mask. 
+  * Call gdal.UseExceptions(), so that when bad things happen, they are more likely
+    to be reported accurately by the exception message, and reduce confusion for users. 
+
+
 Version 0.4.3 (2016-11-26)
 --------------------------
 
