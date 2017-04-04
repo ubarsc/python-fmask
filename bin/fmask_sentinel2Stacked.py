@@ -66,6 +66,14 @@ def getCmdargs():
             "the constant term at the end of equation 17, given in the paper as 0.2 (i.e. 20%%). "+
             "To reduce commission errors, increase this value, but this will also increase "+
             "omission errors. "))
+    dfltNirSnowThresh = config.FmaskConfig.Eqn20NirSnowThresh
+    params.add_argument("--nirsnowthreshold", default=dfltNirSnowThresh, type=float,
+        help=("Threshold for NIR reflectance (range [0-1]) for snow detection "+
+            "(default=%(default)s). Increase this to reduce snow commission errors"))
+    dfltGreenSnowThresh = config.FmaskConfig.Eqn20GreenSnowThresh
+    params.add_argument("--greensnowthreshold", default=dfltGreenSnowThresh, type=float,
+        help=("Threshold for Green reflectance (range [0-1]) for snow detection "+
+            "(default=%(default)s). Increase this to reduce snow commission errors"))
 
     cmdargs = parser.parse_args()
 
@@ -125,6 +133,8 @@ def mainRoutine():
     fmaskConfig.setTOARefScaling(10000.0)
     fmaskConfig.setMinCloudSize(cmdargs.mincloudsize)
     fmaskConfig.setEqn17CloudProbThresh(cmdargs.cloudprobthreshold / 100)    # Note conversion from percentage
+    fmaskConfig.setEqn20NirSnowThresh(cmdargs.nirsnowthreshold)
+    fmaskConfig.setEqn20GreenSnowThresh(cmdargs.greensnowthreshold)
     
     # Work out a suitable buffer size, in pixels, dependent on the resolution of the input TOA image
     toaImgInfo = fileinfo.ImageInfo(cmdargs.toa)
