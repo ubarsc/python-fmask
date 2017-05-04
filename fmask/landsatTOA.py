@@ -46,6 +46,12 @@ ESUN_LOOKUP = {'LANDSAT_4' : LANDSAT4_ESUN,
 RADIANCE_MULT = 'RADIANCE_MULT_BAND_%d'
 RADIANCE_ADD = 'RADIANCE_ADD_BAND_%d'
 
+LMAX_KEY = 'LMAX_BAND%d'
+LMIN_KEY = 'LMIN_BAND%d'
+QCALMAX_KEY = 'QCALMAX_BAND%d'
+QCALMIN_KEY = 'QCALMIN_BAND%d'
+
+
 # band numbers in mtl file for gain and offset for reflective
 BAND_NUM_DICT = {'LANDSAT_4' : (1, 2, 3, 4, 5, 7), 
     'LANDSAT_5' : (1, 2, 3, 4, 5, 7),
@@ -62,14 +68,29 @@ def readGainsOffsets(mtlInfo):
     gains = numpy.zeros(nbands)
     offsets = numpy.zeros(nbands)
     
-    for idx, band in enumerate(BAND_NUM_DICT[spaceCraft]):
-        s = RADIANCE_MULT % band
-        gain = float(mtlInfo[s])
-        gains[idx] = gain
-                        
-        s = RADIANCE_ADD % band
-        offset = float(mtlInfo[s])
-        offsets[idx] = offset
+    if (RADIANCE_MULT % 1) in mtlInfo:
+        # Newer format for MTL file
+        for idx, band in enumerate(BAND_NUM_DICT[spaceCraft]):
+            s = RADIANCE_MULT % band
+            gain = float(mtlInfo[s])
+            gains[idx] = gain
+
+            s = RADIANCE_ADD % band
+            offset = float(mtlInfo[s])
+            offsets[idx] = offset
+    else:
+        # Old format, calculate gain and offset from min/max values
+        for (idx, band) in enumerate(BAND_NUM_DICT[spaceCraft]):
+            lMax = float(mtlInfo[LMAX_KEY % band])
+            lMin = float(mtlInfo[LMIN_KEY % band])
+            qcalMax = float(mtlInfo[QCALMAX_KEY % band])
+            qcalMin = float(mtlInfo[QCALMIN_KEY % band])
+            
+            gain = (lMax - lMin) / (qcalMax - qcalMin)
+            offset = lMin - qcalMin * gain
+            
+            gains[idx] = gain
+            offsets[idx] = offset
                                         
     return gains, offsets
 
