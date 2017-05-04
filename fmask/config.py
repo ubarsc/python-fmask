@@ -717,7 +717,13 @@ def readMTLFile(mtl):
         if len(arr) == 2:
             (key, value) = arr
             dict[key.strip()] = value.replace('"', '').strip()
-                                                                
+
+    # For the older format of the MTL file, a few fields had different names. So, we fake the
+    # new names, so that the rest of the code can just use those. 
+    dict['DATE_ACQUIRED'] = dict['ACQUISITION_DATE']
+    dict['SCENE_CENTER_TIME'] = dict['SCENE_CENTER_SCAN_TIME']
+    
+
     return dict
                                                                     
 
