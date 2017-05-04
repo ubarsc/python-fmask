@@ -72,7 +72,9 @@ USGS Landsat
 
 The command line scripts supplied can process an untarred USGS Landsat scene. Firstly,
 the reflective and thermal bands must be stacked separately. This needs to be done
-in a different manner depending on the sensor.
+in a different manner depending on the sensor. (**Note:** The wild cards shown here are for 
+the more modern form of the USGS naming convention. Older forms would require slightly different
+wild card patterns. )
 
 Landsat 4&5::
 
