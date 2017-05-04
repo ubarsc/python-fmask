@@ -485,8 +485,8 @@ for some reason L4, 5, and 7 don't
 have these numbers in the mtl file, but L8 does
 from http://www.yale.edu/ceo/Documentation/Landsat_DN_to_Kelvin.pdf
 """
-LANDSAT_K1_DICT = {'TM' : 607.76, 'ETM' : 666.09}
-LANDSAT_K2_DICT = {'TM' : 1260.56, 'ETM' : 1282.71}
+LANDSAT_K1_DICT = {'TM' : 607.76, 'ETM' : 666.09, 'ETM+':666.09}
+LANDSAT_K2_DICT = {'TM' : 1260.56, 'ETM' : 1282.71, 'ETM+':1282.71}
         
 def readThermalInfoFromLandsatMTL(mtlfile, thermalBand1040um=0):
     """
@@ -514,6 +514,8 @@ def readThermalInfoFromLandsatMTL(mtlfile, thermalBand1040um=0):
             offset = float(mtlData[s])
         else:
             # Oldest format MTL file
+            if spaceCraft == "LANDSAT_7":
+                band = "61"
             lMax = float(mtlData[LANDSAT_LMAX_KEY % band])
             lMin = float(mtlData[LANDSAT_LMIN_KEY % band])
             qcalMax = float(mtlData[LANDSAT_QCALMAX_KEY % band])
