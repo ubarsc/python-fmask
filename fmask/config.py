@@ -468,6 +468,12 @@ LANDSAT_RADIANCE_ADD = 'RADIANCE_ADD_BAND_%s'
 LANDSAT_K1_CONST = 'K1_CONSTANT_BAND_%s'
 LANDSAT_K2_CONST = 'K2_CONSTANT_BAND_%s'
 
+# Oldest format of MTL file has only min/max values
+LANDSAT_LMAX_KEY = 'LMAX_BAND%s'
+LANDSAT_LMIN_KEY = 'LMIN_BAND%s'
+LANDSAT_QCALMAX_KEY = 'QCALMAX_BAND%s'
+LANDSAT_QCALMIN_KEY = 'QCALMIN_BAND%s'
+
 "band numbers in mtl file for gain and offset for thermal"
 LANDSAT_TH_BAND_NUM_DICT = {'LANDSAT_4' : '6', 
         'LANDSAT_5' : '6',
@@ -499,10 +505,21 @@ def readThermalInfoFromLandsatMTL(mtlfile, thermalBand1040um=0):
         band = LANDSAT_TH_BAND_NUM_DICT[spaceCraft]
         
         s = LANDSAT_RADIANCE_MULT % band
-        gain = float(mtlData[s])
-            
-        s = LANDSAT_RADIANCE_ADD % band
-        offset = float(mtlData[s])
+
+        oldestMtlFormat = (s not in mtlData)
+        
+        if not oldestMtlFormat:
+            gain = float(mtlData[s])
+            s = LANDSAT_RADIANCE_ADD % band
+            offset = float(mtlData[s])
+        else:
+            # Oldest format MTL file
+            lMax = float(mtlData[LANDSAT_LMAX_KEY % band])
+            lMin = float(mtlData[LANDSAT_LMIN_KEY % band])
+            qcalMax = float(mtlData[LANDSAT_QCALMAX_KEY % band])
+            qcalMin = float(mtlData[LANDSAT_QCALMIN_KEY % band])
+            gain = (lMax - lMin) / (qcalMax - qcalMin)
+            offset = lMin - qcalMin * gain
         
     if 'SENSOR_ID' in mtlData:
         # look for k1 and k2
@@ -723,6 +740,11 @@ def readMTLFile(mtl):
     dict['DATE_ACQUIRED'] = dict['ACQUISITION_DATE']
     dict['SCENE_CENTER_TIME'] = dict['SCENE_CENTER_SCAN_TIME']
     
+    # Oldest format has spacecraft ID string formatted differently, so reformat it. 
+    spaceCraft = dict['SPACECRAFT_ID']
+    if spaceCraft.startswith('Landsat') and '_' not in spaceCraft:
+        satNum = spaceCraft[-1]
+        dict['SPACECRAFT_ID'] = "LANDSAT_" + satNum
 
     return dict
                                                                     
