@@ -739,8 +739,10 @@ def readMTLFile(mtl):
 
     # For the older format of the MTL file, a few fields had different names. So, we fake the
     # new names, so that the rest of the code can just use those. 
-    dict['DATE_ACQUIRED'] = dict['ACQUISITION_DATE']
-    dict['SCENE_CENTER_TIME'] = dict['SCENE_CENTER_SCAN_TIME']
+    if 'ACQUISITION_DATE' in dict:
+        dict['DATE_ACQUIRED'] = dict['ACQUISITION_DATE']
+    if 'SCENE_CENTER_SCAN_TIME' in dict:
+        dict['SCENE_CENTER_TIME'] = dict['SCENE_CENTER_SCAN_TIME']
     
     # Oldest format has spacecraft ID string formatted differently, so reformat it. 
     spaceCraft = dict['SPACECRAFT_ID']
