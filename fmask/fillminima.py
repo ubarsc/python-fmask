@@ -55,7 +55,7 @@ def fillMinima(img, nullval, boundaryval):
 
     if nullmask.sum() > 0:
         nullmaskDilated = grey_dilation(nullmask, size=(3, 3))
-        innerBoundary = nullmaskDilated - nullmask
+        innerBoundary = nullmaskDilated ^ nullmask
         (boundaryRows, boundaryCols) = numpy.where(innerBoundary)
     else:
         img2[0, :] = img[0, :]
