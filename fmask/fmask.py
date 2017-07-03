@@ -1277,16 +1277,3 @@ def maskAndBuffer(info, inputs, outputs, otherargs):
     out[water] = OUTCODE_WATER
     out[resetNullmask] = outNullval
     outputs.out = numpy.array([out])
-    
-
-def focalVariance(img, winSize):
-    """
-    Calculate the focal variance of the given 2-d image, over a moving window of 
-    size winSize pixels.
-    
-    """
-    img32 = img.astype(numpy.float32)
-    focalMean = uniform_filter(img32, size=winSize)
-    meanSq = uniform_filter(img32**2, size=winSize)
-    variance = meanSq - focalMean**2
-    return variance
