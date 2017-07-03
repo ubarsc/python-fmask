@@ -39,20 +39,20 @@ FMASK_SENTINEL2 = 2
 """
 Some constants for the various reflective bands used in fmask.
 """
+#: ~475nm
 BAND_BLUE = 0
-"~45um"
+#: ~560nm
 BAND_GREEN = 1
-"~52um"
+#: ~660nm
 BAND_RED = 2
-"~63um"
+#: ~780nm
 BAND_NIR = 3
-"~76um"
+#: ~1360nm
 BAND_CIRRUS = 4 # Sentinel2 + Landsat8 only
-"~136um"
+#: ~1610nm
 BAND_SWIR1 = 5
-"~155um"
+#: ~2200nm
 BAND_SWIR2 = 6
-"~208um"
 
 class FmaskConfig(object):
     """
