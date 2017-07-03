@@ -472,7 +472,7 @@ class ThermalFileInfo(object):
         bt = temp - KELVIN_ZERO_DEGC
         return bt
 
-"Keys within a .mtl file for each band"
+# Keys within a .mtl file for each band
 LANDSAT_RADIANCE_MULT = 'RADIANCE_MULT_BAND_%s'
 LANDSAT_RADIANCE_ADD = 'RADIANCE_ADD_BAND_%s'
 LANDSAT_K1_CONST = 'K1_CONSTANT_BAND_%s'
@@ -484,17 +484,16 @@ LANDSAT_LMIN_KEY = 'LMIN_BAND%s'
 LANDSAT_QCALMAX_KEY = 'QCALMAX_BAND%s'
 LANDSAT_QCALMIN_KEY = 'QCALMIN_BAND%s'
 
-"band numbers in mtl file for gain and offset for thermal"
+# band numbers in mtl file for gain and offset for thermal
 LANDSAT_TH_BAND_NUM_DICT = {'LANDSAT_4' : '6', 
         'LANDSAT_5' : '6',
         'LANDSAT_7' : '6_VCID_1',
         'LANDSAT_8' : '10'}
                         
-"""
-for some reason L4, 5, and 7 don't
-have these numbers in the mtl file, but L8 does
-from http://www.yale.edu/ceo/Documentation/Landsat_DN_to_Kelvin.pdf
-"""
+
+# for some reason L4, 5, and 7 don't
+# have these numbers in the mtl file, but L8 does
+# from http://www.yale.edu/ceo/Documentation/Landsat_DN_to_Kelvin.pdf
 LANDSAT_K1_DICT = {'TM' : 607.76, 'ETM' : 666.09, 'ETM+':666.09}
 LANDSAT_K2_DICT = {'TM' : 1260.56, 'ETM' : 1282.71, 'ETM+':1282.71}
         
