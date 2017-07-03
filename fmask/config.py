@@ -54,13 +54,6 @@ BAND_SWIR1 = 5
 #: ~2200nm
 BAND_SWIR2 = 6
 
-# These bands are used only for the Sentinel-2 CDI code. They are NIR bands, with slightly
-# different look angles, and used as per Frantz et al 2017. 
-#: ~865nm
-BAND_S2CDI_NIR8A = 7
-#: ~783nm
-BAND_S2CDI_NIR7 = 8
-
 class FmaskConfig(object):
     """
     Class that contains the configuration parameters of the fmask
@@ -97,8 +90,6 @@ class FmaskConfig(object):
     
     # GDAL driver for final output file
     gdalDriverName = applier.DEFAULTDRIVERNAME
-    
-    sen2displacementTest = True
     
     def __init__(self, sensor):
         """
