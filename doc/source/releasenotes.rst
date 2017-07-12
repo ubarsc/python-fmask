@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.4.5 (2017-07-12)
+--------------------------
+
+Bug Fixes:
+  * Handling old formats of USGS MTL files
+  * Fixes for numpy 1.13
+
+
 Version 0.4.4 (2017-04-04)
 --------------------------
 
