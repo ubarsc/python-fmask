@@ -70,6 +70,13 @@ the commands get run with the wildcards expanded as they do in Unix/Linux.
 USGS Landsat
 ^^^^^^^^^^^^
 
+**Update:** Since the USGS released their Collection-1 data set (completed globally in 2017), 
+they now distribute cloud, shadow 
+and snow masks included in their QA layer. These are calculated using CFMask, which should, 
+in principle, be equivalent to the results of this code. Therefore, when processing USGS
+Collection-1 data, users may prefer the USGS-supplied masks. 
+See `USGS QA Layer <https://landsat.usgs.gov/collectionqualityband>`_. 
+
 The command line scripts supplied can process an untarred USGS Landsat scene. Firstly,
 the reflective and thermal bands must be stacked separately. This needs to be done
 in a different manner depending on the sensor. (**Note:** The wild cards shown here are for 
