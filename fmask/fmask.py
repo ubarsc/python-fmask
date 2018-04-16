@@ -53,7 +53,6 @@ import tempfile
 import numpy
 numpy.seterr(all='raise')
 from osgeo import gdal
-gdal.UseExceptions()
 from scipy.ndimage import uniform_filter, maximum_filter, label
 import scipy.stats
 
@@ -92,7 +91,8 @@ OUTCODE_SHADOW = 3
 OUTCODE_SNOW = 4
 #: Output pixel value for water
 OUTCODE_WATER = 5
-    
+
+@config.fmaskentry    
 def doFmask(fmaskFilenames, fmaskConfig):
     """
     Main routine for whole Fmask algorithm. Calls all other routines in sequence. 

@@ -25,7 +25,6 @@ import numpy
 import scipy.constants
 
 from osgeo import gdal
-gdal.UseExceptions()
 from rios import applier
 from . import fmaskerrors
 
@@ -763,3 +762,34 @@ def readAnglesFromLandsatMTL(mtlfile):
     msg = ("The simplified option of assuming constant angles across the whole image is "+
         "no longer supported. You must use per-pixel angles. ")
     raise fmaskerrors.FmaskNotSupportedError(msg)
+
+def fmaskentry(func):
+    """
+    Decorator to be used with functions called by 
+    the user. Tells GDAL to raise exceptions on errors
+    but resets this at the end of the function to the original
+    state to avoid causing problems in other parts of the users
+    code.
+    """
+    def func_wrapper(*args, **kwargs):
+        """
+        This is the function that does the wrapping
+        """
+        # save the exception state
+        gdal_ex_state = gdal.GetUseExceptions()
+        # always use exceptions
+        gdal.UseExceptions()
+
+        try:
+            # call the wrapped function
+            ret = func(*args, **kwargs)
+        finally:
+            # at the end restore the state if needed
+            if not gdal_ex_state:
+                gdal.DontUseExceptions()
+
+        # return the original value from the function
+        return ret
+
+    return func_wrapper
+

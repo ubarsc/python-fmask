@@ -24,7 +24,6 @@ from __future__ import print_function, division
 import sys
 import numpy
 from osgeo import gdal
-gdal.UseExceptions()
 from rios import applier, cuiprogress, fileinfo
 from . import fmask
 from . import config
@@ -141,7 +140,7 @@ def riosTOA(info, inputs, outputs, otherinputs):
     for i in range(len(outputs.outfile)):
         outputs.outfile[i][nullMask] = otherinputs.outNull
 
-
+@config.fmaskentry
 def makeTOAReflectance(infile, mtlFile, anglesfile, outfile):
     """
     Main routine - does the calculation

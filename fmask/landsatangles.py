@@ -68,6 +68,9 @@ from osgeo import osr
 from rios import applier
 from rios import fileinfo
 
+from . import config
+
+@config.fmaskentry
 def findImgCorners(img, imgInfo):
     """
     Find the corners of the data within the given template image
