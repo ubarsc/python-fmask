@@ -165,7 +165,7 @@ command line to install python-fmask: ::
 Applications that use python-fmask
 ----------------------------------
 
-* `Cloud Masking<https://smbyc.bitbucket.io/qgisplugins/cloudmasking/>`_: It  is a Qgis plugin for cloud masking the Landsat (4, 5, 7 and 8) products using different process and filters such as Fmask, Blue Band, Cloud QA, Aerosol and Pixel QA.
+* `Cloud Masking <https://smbyc.bitbucket.io/qgisplugins/cloudmasking/>`_: It  is a Qgis plugin for cloud masking the Landsat (4, 5, 7 and 8) products using different process and filters such as Fmask, Blue Band, Cloud QA, Aerosol and Pixel QA.
 
 Issues
 ------
