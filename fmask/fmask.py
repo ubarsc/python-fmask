@@ -301,6 +301,7 @@ def potentialCloudFirstPass(info, inputs, outputs, otherargs):
     nir = otherargs.refBands[config.BAND_NIR]
     swir1 = otherargs.refBands[config.BAND_SWIR1]
     swir2 = otherargs.refBands[config.BAND_SWIR2]
+    watervapour = otherargs.refBands[config.BAND_WATERVAPOUR]
     if hasattr(inputs, 'thermal'):
         THERM = otherargs.thermalInfo.thermalBand1040um
     
@@ -329,7 +330,8 @@ def potentialCloudFirstPass(info, inputs, outputs, otherargs):
     for n in [blue, green, red]:
         whiteness = whiteness + numpy.absolute((ref[n] - meanVis) / meanVis)
 
-    whitenessTest = (whiteness < fmaskConfig.Eqn2WhitenessThresh)
+    # Modified as per Frantz 2015, corresponding to his "darkness test" - make this a parameter......
+    whitenessTest = ((whiteness < fmaskConfig.Eqn2WhitenessThresh) & (meanVis > 0.15))
     
     # Haze test, equation 3
     hazeTest = ((ref[blue] - 0.5 * ref[red] - 0.08) > 0)
@@ -352,6 +354,12 @@ def potentialCloudFirstPass(info, inputs, outputs, otherargs):
     
     # Equation 6. Potential cloud pixels (first pass)
     pcp = basicTest & whitenessTest & hazeTest & b45test
+    
+    # If Sentinel-2, we can use the Frantz 2018 displacement test
+    if (fmaskConfig.sensor == config.FMASK_SENTINEL2) and fmaskConfig.sen2displacementTest:
+        (ratio8a8, ratio8a7, v8a8, v8a7, cdi) = calcCDI(ref, fmaskConfig, otherargs.refBands)
+        # pcp[cdi < 0.5] = False
+        pcp = pcp | ((cdi > 0.5) & (meanVis > 0.15)) | (ref[watervapour] > 0.5)
     
     # Include cirrusBandTest, from 2015 paper. Zhu et al. are not clear whether it is
     # supposed to be combined with previous tests using AND or OR, so I tried both
@@ -620,7 +628,7 @@ def cloudFinalPass(info, inputs, outputs, otherargs):
     Final pass of cloud mask layer
     """
     nullmask = inputs.pass1[4].astype(numpy.bool)
-    pcp = inputs.pass1[0]
+    pcp = inputs.pass1[0].astype(numpy.bool)
     waterTest = inputs.pass1[1]
     notWater = numpy.logical_not(waterTest)
     notWater[nullmask] = False
@@ -1277,3 +1285,32 @@ def maskAndBuffer(info, inputs, outputs, otherargs):
     out[water] = OUTCODE_WATER
     out[resetNullmask] = outNullval
     outputs.out = numpy.array([out])
+
+
+def focalVariance(img, winSize):
+    """
+    Calculate the focal variance of the given 2-d image, over a moving window of
+    size winSize pixels.
+
+    """
+    img32 = img.astype(numpy.float32)
+    focalMean = uniform_filter(img32, size=winSize)
+    meanSq = uniform_filter(img32**2, size=winSize)
+    variance = meanSq - focalMean**2
+    return variance
+
+
+def calcCDI(ref, fmaskConfig, refBands):
+    """
+    Calculate the Cloud Displacement Index, as per Frantz et al (2018). 
+    """
+    # Equations 5 & 6
+    ratio8a8 = ref[refBands[config.BAND_NIR]] / ref[refBands[config.BAND_S2CDI_NIR8A]]
+    ratio8a7 = ref[refBands[config.BAND_S2CDI_NIR7]] / ref[refBands[config.BAND_S2CDI_NIR8A]]
+    
+    # Equation 7
+    v8a8 = focalVariance(ratio8a8, fmaskConfig.sen2cdiWindow)
+    v8a7 = focalVariance(ratio8a7, fmaskConfig.sen2cdiWindow)
+    cdi = (v8a8 - v8a7) / (v8a8 + v8a7)
+    
+    return (ratio8a8, ratio8a7, v8a8, v8a7, cdi)
