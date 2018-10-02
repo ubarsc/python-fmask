@@ -9,12 +9,12 @@ Introduction
 A set of command line utilities and Python modules that implement
 the 'fmask' algorithm as published in:
 
-Zhu, Z. and Woodcock, C.E. (2012). 
+Zhu, Z. and Woodcock, C.E. (2012).
 Object-based cloud and cloud shadow detection in Landsat imagery
-Remote Sensing of Environment 118 (2012) 83-94. 
-    
+Remote Sensing of Environment 118 (2012) 83-94.
+
 and
-    
+
 Zhu, Z., Wang, S. and Woodcock, C.E. (2015).
 Improvement and expansion of the Fmask algorithm: cloud, cloud
 shadow, and snow detection for Landsats 4-7, 8, and Sentinel 2 images
@@ -24,62 +24,62 @@ Installation requires `Python <http://python.org/>`_, `numpy <http://www.numpy.o
 `GDAL <http://gdal.org/>`_ and `RIOS <http://rioshome.org/>`_ and the ability to compile C extensions for Python.
 It is licensed under GPL 3.
 
-Originally developed by Neil Flood at `DSITI <https://www.qld.gov.au/dsiti/>`_ 
+Originally developed by Neil Flood at `DSITI <https://www.qld.gov.au/dsiti/>`_
 and additional work funded by `Landcare Research <http://www.landcareresearch.co.nz>`_.
 
 
 Philosophy
 ----------
-This package implements the Fmask algorithm as a Python module. It is intended that this 
+This package implements the Fmask algorithm as a Python module. It is intended that this
 can be wrapped in a variety of main programs which can handle the local details of how
 the image files are named and organised, and is intended to provide maximum flexibility. It
 should not be tied to expecting the imagery to be layed out in a particular manner.
 
-This modular design also simplifies the use of the same core algorithm on either Landsat and 
-Sentinel imagery. The wrapper programs take care of differences in file organisation and 
-metadata formats, while the core algorithm is the same for both. 
+This modular design also simplifies the use of the same core algorithm on either Landsat and
+Sentinel imagery. The wrapper programs take care of differences in file organisation and
+metadata formats, while the core algorithm is the same for both.
 
 However, we have also supplied some example wrapper scripts, based around the image organisation
 as supplied by the usual distributors of the imagery. In the case of Landsat, we have supplied
 main programs which can cope with the data as it comes from USGS, while in the case of Sentinel-2
-we have supplied wrappers to deal with the data as supplied by ESA. 
+we have supplied wrappers to deal with the data as supplied by ESA.
 
 It is expected that some users will use these directly, while larger organisations will wish to
-create their own wrappers specific to their own file naming and layout conventions. 
+create their own wrappers specific to their own file naming and layout conventions.
 
 The output from the core algorithm module is a single thematic raster, with integer
 codes representing null, clear, cloud, shadow, snow, water respectively.
 
-The examples shown below use the given example wrappers. 
+The examples shown below use the given example wrappers.
 
 Command Line Examples
 ---------------------
 
-All the commandline programs given use argparse to handle commandline arguments, and hence will 
-respond sensibly to the -h option by printing their own help. 
-Some have options to modify their behaviour. 
+All the commandline programs given use argparse to handle commandline arguments, and hence will
+respond sensibly to the -h option by printing their own help.
+Some have options to modify their behaviour.
 
-Please note that the output format used is defined by `RIOS <http://rioshome.org/>`_. This defaults to HFA (.img). 
+Please note that the output format used is defined by `RIOS <http://rioshome.org/>`_. This defaults to HFA (.img).
 See `RIOS documentation <http://rioshome.org/rios_imagewriter.html#rios.imagewriter.setDefaultDriver>`_
 for more information and how to change this using the environment variable $RIOS_DFLT_DRIVER.
 
 **Note:** these examples are for use in a Unix/Linux shell so that the filename wildcards
-get expanded properly. Windows users should prefix these commands with "fmask_expandWildcards" so that 
+get expanded properly. Windows users should prefix these commands with "fmask_expandWildcards" so that
 the commands get run with the wildcards expanded as they do in Unix/Linux.
 
 USGS Landsat
 ^^^^^^^^^^^^
 
-**Update:** Since the USGS released their Collection-1 data set (completed globally in 2017), 
-they now distribute cloud, shadow 
-and snow masks included in their QA layer. These are calculated using CFMask, which should, 
+**Update:** Since the USGS released their Collection-1 data set (completed globally in 2017),
+they now distribute cloud, shadow
+and snow masks included in their QA layer. These are calculated using CFMask, which should,
 in principle, be equivalent to the results of this code. Therefore, when processing USGS
-Collection-1 data, users may prefer the USGS-supplied masks. 
-See `USGS QA Layer <https://landsat.usgs.gov/collectionqualityband>`_. 
+Collection-1 data, users may prefer the USGS-supplied masks.
+See `USGS QA Layer <https://landsat.usgs.gov/collectionqualityband>`_.
 
 The command line scripts supplied can process an untarred USGS Landsat scene. Firstly,
 the reflective and thermal bands must be stacked separately. This needs to be done
-in a different manner depending on the sensor. (**Note:** The wild cards shown here are for 
+in a different manner depending on the sensor. (**Note:** The wild cards shown here are for
 the more modern form of the USGS naming convention. Older forms would require slightly different
 wild card patterns. )
 
@@ -107,59 +107,66 @@ Then mask and Top of Atmosphere reflectance must be calculated and finally the c
 
     fmask_usgsLandsatSaturationMask.py -i ref.img -m *_MTL.txt -o saturationmask.img
     fmask_usgsLandsatTOA.py -i ref.img -m *_MTL.txt -z angles.img -o toa.img
-    fmask_usgsLandsatStacked.py -t thermal.img -a toa.img -m *_MTL.txt -z angles.img -s saturationmask.img -o cloud.img 
+    fmask_usgsLandsatStacked.py -t thermal.img -a toa.img -m *_MTL.txt -z angles.img -s saturationmask.img -o cloud.img
 
-If the thermal band is empty (for Landsat-8 with the SSM anomaly, after 2015-11-01) then it 
+If the thermal band is empty (for Landsat-8 with the SSM anomaly, after 2015-11-01) then it
 is ignored gracefully.
 
 Sentinel2
 ^^^^^^^^^
 
-The command line scripts supplied can process a Sentinel2 Level C granule from the image directory. 
-Here is an example of how to do this. This example works at 20m resolution, but the 
-recipe can be varied as required. Be warned, processing at 10m resolution would be considerably 
-slower, and is unlikely to be any more accurate. 
+The command line scripts supplied can process a Sentinel2 Level C granule from the image directory.
+Here is an example of how to do this. This example works at 20m resolution, but the
+recipe can be varied as required. Be warned, processing at 10m resolution would be considerably
+slower, and is unlikely to be any more accurate.
 
-This makes a stack of ALL the bands, at the 20m resolution (a compromise between speed and detail). 
+In order to use the CDI test as described in [Frantz, 2018], it is essential to do a manual averaging to 20m of the 10m bands. Otherwise the internal JPEG2000 overviews will be used which will result in a suboptimal cloudmask because these tend to have a shift.
+To avoid the internal overviews to be used, first create geotiffs without overviews for the 4 10m bands::
+
+    for B in *_B0[2348].jp2; do gdal_translate -co tiled=yes $B $B.tif; gdal_translate -co tiled=yes -tr 20 20 -r average $B.tif $B.R.tif; done
+
+This creates ...jp2.R.tif files which are truly resampled versions of the 10m jp2 bands, instead of the fake resamplings you would get if you'd resample those directly.
+
+Now make a stack of ALL the bands, at the 20m resolution (a compromise between speed and detail).
 Bands are in order of numeric band number::
 
-    gdalbuildvrt -resolution user -tr 20 20 -separate allbands.vrt *_B0[1-8].jp2 *_B8A.jp2 *_B09.jp2 *_B1[0-2].jp2
+    gdalbuildvrt -resolution user -tr 20 20 -separate allbands.vrt *_B01.jp2 *_B0[234].jp2.R.tif *_B0[567].jp2 *_B08.jp2.R.tif *_B8A.jp2 *_B09.jp2 *_B1[0-2].jp2
 
 Make a separate image of the per-pixel sun and satellite angles. ::
 
     fmask_sentinel2makeAnglesImage.py -i ../*.xml -o angles.img
-    
-Now create the cloud mask output image. 
+
+Now create the cloud mask output image.
 Note that this assumes the bands are in a particular order (as created in the vrt, above)::
 
     fmask_sentinel2Stacked.py -a allbands.vrt -z angles.img -o cloud.img
 
-Note that the wild card patterns used in the above example commands are quite simple. This is 
-mainly so that they will work with both the old and the new file naming conventions which ESA 
-are using. Feel free to be more restrictive. 
+Note that the wild card patterns used in the above example commands are quite simple. This is
+mainly so that they will work with both the old and the new file naming conventions which ESA
+are using. Feel free to be more restrictive.
 
 
 Re-wrapping and Re-configuring
 ------------------------------
 To build a different set of wrappers, and configure things differently, the default
-wrappers are a good place to start. The configuration is mainly handled by the 
-:class:`fmask.config.FmaskConfig` class. For example, one would 
-call :func:`fmask.config.FmaskConfig.setReflectiveBand` to change which layer of the stack 
-corresponds to which wavelength band. 
+wrappers are a good place to start. The configuration is mainly handled by the
+:class:`fmask.config.FmaskConfig` class. For example, one would
+call :func:`fmask.config.FmaskConfig.setReflectiveBand` to change which layer of the stack
+corresponds to which wavelength band.
 
 Downloads
 ---------
 Get the source as a bundle from `BitBucket <https://bitbucket.org/chchrsc/python-fmask/downloads>`_.
-Release notes for each version can be read in :doc:`releasenotes`. To install from source, 
-read the INSTALL.txt file included inside the source bundle. 
+Release notes for each version can be read in :doc:`releasenotes`. To install from source,
+read the INSTALL.txt file included inside the source bundle.
 
-Pre-built binary `Conda <http://conda.pydata.org/miniconda.html#miniconda>`_ packages are available 
-under the 'conda-forge' channel. Once you have installed 
-`Conda <http://conda.pydata.org/miniconda.html#miniconda>`_, run the following commands on the 
+Pre-built binary `Conda <http://conda.pydata.org/miniconda.html#miniconda>`_ packages are available
+under the 'conda-forge' channel. Once you have installed
+`Conda <http://conda.pydata.org/miniconda.html#miniconda>`_, run the following commands on the
 command line to install python-fmask: ::
 
-    conda config --add channels conda-forge 
-    conda create -n myenv python-fmask 
+    conda config --add channels conda-forge
+    conda create -n myenv python-fmask
     source activate myenv # omit 'source' on Windows
 
 Applications that use python-fmask
