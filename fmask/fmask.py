@@ -654,11 +654,11 @@ def cloudFinalPass(info, inputs, outputs, otherargs):
     cloudmask2 = pcp & notWater & (lCloud_prob>landThreshold)
     # according to [Zhu 2015] the lCloudprob > 0.99 test should be removed.
     # For now I only disabled it for S2, because it gives a lot of false
-    # positives due to a missing thermal band.
+    # positives due to missing a thermal band.
     if (otherargs.sensor == config.FMASK_SENTINEL2):
-    cloudmask3 = (lCloud_prob > 0.99) & notWater
-    else:
         cloudmask3 = numpy.zeros(cloudmask1.shape, dtype=numpy.bool)
+    else:
+        cloudmask3 = (lCloud_prob > 0.99) & notWater
     if Tlow is not None:
         cloudmask4 = (bt < (Tlow-35))
     else:
