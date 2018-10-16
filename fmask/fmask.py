@@ -1326,6 +1326,10 @@ def calcCDI(ref, fmaskConfig, refBands):
     # Equation 7
     v8a8 = focalVariance(ratio8a8, fmaskConfig.sen2cdiWindow)
     v8a7 = focalVariance(ratio8a7, fmaskConfig.sen2cdiWindow)
-    cdi = (v8a7 - v8a8) / (v8a7 + v8a8)
+    
+    # Mask out where we would divide by zero
+    cdi = numpy.zeros(v8a7.shape, dtype=numpy.float32)
+    divOK = ((v8a7 + v8a8) != 0)
+    cdi[divOK] = (v8a7[divOK] - v8a8[divOK]) / (v8a7[divOK] + v8a8[divOK])
 
     return (ratio8a8, ratio8a7, v8a8, v8a7, cdi)
