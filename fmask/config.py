@@ -126,7 +126,6 @@ class FmaskConfig(object):
             self.bands = {BAND_BLUE:1, BAND_GREEN:2, BAND_RED:3, BAND_NIR:7,
                     BAND_SWIR1:11, BAND_SWIR2:12, BAND_WATERVAPOUR:9, BAND_CIRRUS:10,
                     BAND_S2CDI_NIR7:6, BAND_S2CDI_NIR8A:8}
-            self.sen2displacementTest = True
         else:
             msg = 'unrecognised sensor'
             raise fmaskerrors.FmaskParameterError(msg)
