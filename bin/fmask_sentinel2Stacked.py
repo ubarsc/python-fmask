@@ -74,6 +74,8 @@ def getCmdargs():
     params.add_argument("--greensnowthreshold", default=dfltGreenSnowThresh, type=float,
         help=("Threshold for Green reflectance (range [0-1]) for snow detection "+
             "(default=%(default)s). Increase this to reduce snow commission errors"))
+    params.add_argument("--parallaxtest", default=False, action="store_true",
+        help="Turn on the parallax displacement test from Frantz (2018)
 
     cmdargs = parser.parse_args()
 
@@ -135,6 +137,7 @@ def mainRoutine():
     fmaskConfig.setEqn17CloudProbThresh(cmdargs.cloudprobthreshold / 100)    # Note conversion from percentage
     fmaskConfig.setEqn20NirSnowThresh(cmdargs.nirsnowthreshold)
     fmaskConfig.setEqn20GreenSnowThresh(cmdargs.greensnowthreshold)
+    fmaskConfig.setSen2displacementTest(cmdargs.parallaxtest)
     
     # Work out a suitable buffer size, in pixels, dependent on the resolution of the input TOA image
     toaImgInfo = fileinfo.ImageInfo(cmdargs.toa)
