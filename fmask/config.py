@@ -349,6 +349,14 @@ class FmaskConfig(object):
         """
         self.Eqn19NIRFillThresh = thresh
     
+    def setSen2displacementTest(self, useDisplacementTest):
+        """
+        Set whether or not to use the Frantz (2018) parallax displacement test
+        to remove false clouds. Pass True if the test is desired, False otherwise. 
+        
+        """
+        self.sen2displacementTest = useDisplacementTest
+    
     def setGdalDriverName(self, driverName):
         """
         Change the GDAL driver used for writing the final output file. Default
