@@ -1,6 +1,19 @@
 Release Notes
 =============
 
+Version 0.5.0 (2018-10-18)
+--------------------------
+
+Enhancements
+  * For Sentinel-2, added support for parallax test to remove false cloud in bright (typically
+    urban) areas, as per Frantz (2018). Optional, defaults to off. Thanks to Vincent Schut
+    for assistance in kicking that across the line. 
+  * For Sentinel-2, added command line switch to directly use the SAFE directory as 
+    provided by ESA, to avoid the need to manually stack up the individual bands externally. 
+  * For Sentinel-2, turn off the (cloud prob > 99%) test, as suggested by Zhu (2015). It is 
+    in effect for Landsat. 
+
+
 Version 0.4.5 (2017-07-12)
 --------------------------
 
