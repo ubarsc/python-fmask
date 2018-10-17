@@ -246,6 +246,7 @@ def findGranuleDir(safedir):
         msg = "Found multiple GRANULE sub-directories: {}".format(dirstring)
         raise fmaskerrors.FmaskFileError(msg)
     
+    granuleDir = granuleDirList[0]
     return granuleDir
 
 
