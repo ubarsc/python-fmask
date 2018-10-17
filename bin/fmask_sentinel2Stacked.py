@@ -302,13 +302,14 @@ def mainRoutine():
     
     fmask.doFmask(fmaskFilenames, fmaskConfig)
     
-    if anglesfile != cmdargs.anglesfile or tempStack:
+    if (anglesfile != cmdargs.anglesfile):
         # Must have been a temporary, so remove it
         os.remove(anglesfile)
     
     if tempStack and not cmdargs.keepintermediates:
-        if os.path.exists(cmdargs.toa):
-            os.remove(cmdargs.toa)
+        for fn in [cmdargs.toa, cmdargs.anglesfile]:
+            if os.path.exists(fn):
+                os.remove(fn)
     
 
 if __name__ == '__main__':
