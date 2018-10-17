@@ -43,13 +43,21 @@ def getCmdargs():
     parser.add_argument("--safedir", help=("Name of .SAFE directory, as unzipped from " +
         "a standard ESA L1C zip file. Using this option will automatically create intermediate " +
         "stacks of the input bands, and so does NOT require --toa or --anglesfile. "))
+    parser.add_argument("--granuledir", help=("Name of granule sub-directory within the " +
+        ".SAFE directory, as unzipped from a standard ESA L1C zip file. This option is an " +
+        "alternative to --safedir, for use with ESA's old format zipfiles which had multiple " +
+        "granules in each zipfile. Specify the subdirectory of the single tile, under the " +
+        "<safedir>/GRANULE/ directory. " +
+        "Using this option will automatically create intermediate " +
+        "stacks of the input bands, and so does NOT require --toa or --anglesfile. "))
     parser.add_argument('-a', '--toa', 
-        help=('Input stack of TOA reflectance (as supplied by ESA). This is only required if NOT' +
-            'using the --safedir option. '))
+        help=('Input stack of TOA reflectance (as supplied by ESA). This is obsolete, and is ' +
+            'only required if NOT using the --safedir or --granuledir option. '))
     parser.add_argument('-z', '--anglesfile', 
         help=("Input angles file containing satellite and sun azimuth and zenith. " +
             "See fmask_sentinel2makeAnglesImage.py for assistance in creating this. " +
-            "This option is only required if NOT using the --safedir option. "))
+            "This option is obsolete, and is only required if NOT using the --safedir " +
+            "or --granuledir option. "))
     parser.add_argument('-o', '--output', help='Output cloud mask')
     parser.add_argument('-v', '--verbose', dest='verbose', default=False,
         action='store_true', help='verbose output')
@@ -89,10 +97,16 @@ def getCmdargs():
 
     cmdargs = parser.parse_args()
 
+    # Do some sanity checks on what was given
     safeDirGiven = (cmdargs.safedir is not None)
+    granuleDirGiven = (cmdargs.granuledir is not None)
+    if granuleDirGiven and safeDirGiven:
+        print("Only give one of --safedir or --granuledir. The --granuledir is only ")
+        print("required for multi-tile zipfiles in the old ESA format")
+        sys.exit(1)
     stackAnglesGiven = (cmdargs.toa is not None and cmdargs.anglesfile is not None)
-    multipleInputGiven = safeDirGiven and stackAnglesGiven
-    inputGiven = safeDirGiven or stackAnglesGiven
+    multipleInputGiven = (safeDirGiven or granuleDirGiven) and stackAnglesGiven
+    inputGiven = safeDirGiven or granuleDirGiven or stackAnglesGiven
     if cmdargs.output is None or multipleInputGiven or not inputGiven:
         parser.print_help()
         sys.exit(1)
@@ -134,17 +148,19 @@ def makeStackAndAngles(cmdargs):
     of the angles. Fill in the names of these in the cmdargs object. 
         
     """
-    # Find the commands we need, even under Windoze
+    if cmdargs.granuledir is None and cmdargs.safedir is not None:
+        cmdargs.granuledir = findGranuleDir(cmdargs.safedir)
+
+    # Find the other commands we need, even under Windoze
     anglesScript = find_executable("fmask_sentinel2makeAnglesImage.py")
-    gdalTranslateCmd = find_executable("gdal_translate")
     gdalWarpCmd = find_executable("gdalwarp")
-    buildvrtCmd = find_executable("gdalbuildvrt")
+    gdalmergeCmd = find_executable("gdal_merge.py")
 
     # Make the angles file
     (fd, anglesfile) = tempfile.mkstemp(dir=cmdargs.tempdir, prefix="angles_tmp_", 
         suffix=".tif")
     os.close(fd)
-    xmlfile = findGranuleXml(cmdargs.safedir)
+    xmlfile = findGranuleXml(cmdargs.granuledir)
     cmd = "{} -i {} -o {}".format(anglesScript, xmlfile, anglesfile)
     if cmdargs.verbose:
         print("Making angles image")
@@ -156,44 +172,63 @@ def makeStackAndAngles(cmdargs):
     # According to @vincentschut, these are shifted slightly, and should be avoided.
     bandList = ['B01', 'B02', 'B03', 'B04', 'B05', 'B06', 'B07', 'B08', 'B8A',
         'B09', 'B10', 'B11', 'B12']
-    imgDir = "{}/GRANULE/L1C_*/IMG_DATA".format(cmdargs.safedir)
+    imgDir = "{}/IMG_DATA".format(cmdargs.granuledir)
     resampledBands = []
-    (fd, tmpBand1) = tempfile.mkstemp(dir=cmdargs.tempdir, prefix="tmp1_",
-        suffix=".tif")
-    if cmdargs.verbose:
-        print("Resampling explicitly, to avoid shifted overviews")
     for band in bandList:
-        (fd, tmpBand2) = tempfile.mkstemp(dir=cmdargs.tempdir, prefix="tmp2_{}_".format(band),
-            suffix=".tif")
+        (fd, tmpBand) = tempfile.mkstemp(dir=cmdargs.tempdir, prefix="tmp_{}_".format(band),
+            suffix=".vrt")
         inBandImgList = glob.glob("{}/*_{}.jp2".format(imgDir, band))
         if len(inBandImgList) != 1:
             raise fmaskerrors.FmaskFileError("Cannot find input band {}".format(band))
         inBandImg = inBandImgList[0]
-        # First make a plain copy with no overviews
-        cmd = ("{gdaltranslate} -co TILED=YES -of GTiff {inimg} {outimg}").format(
-            gdaltranslate=gdalTranslateCmd, inimg=inBandImg, outimg=tmpBand1)
+
+        # Now make a resampled copy to the desired pixel size, using the right resample method
+        resampleMethod = chooseResampleMethod(cmdargs.pixsize, inBandImg)
+        cmd = ("{gdalwarp} -q -tr {pixsize} {pixsize} -co TILED=YES -of VRT "+
+            "-r {resample} {inimg} {outimg}").format(gdalwarp=gdalWarpCmd, 
+            pixsize=cmdargs.pixsize, inimg=inBandImg, outimg=tmpBand,
+            resample=resampleMethod)
         os.system(cmd)
-        # Now make a resampled copy to the desired pixel size
-        cmd = ("{gdalwarp} -tr {pixsize} {pixsize} -co TILED=YES -of GTiff "+
-            "-r average {inimg} {outimg}").format(gdalwarp=gdalWarpCmd, 
-            pixsize=cmdargs.pixsize, inimg=tmpBand1, outimg=tmpBand2)
-        os.system(cmd)
-        os.remove(tmpBand1)
         
-        resampledBands.append(tmpBand2)
+        resampledBands.append(tmpBand)
     
-    # Now make a vrt stack of these
-    cmdargs.toa = "allbands.vrt"
-    cmd = "{buildvrt} -separate {outvrt} {inimgs}".format(buildvrt=buildvrtCmd,
-        outvrt=cmdargs.toa, inimgs=' '.join(resampledBands))
+    # Now make a stack of these
     if cmdargs.verbose:
-        print(cmd)
+        print("Making stack of all bands, at {}m pixel size".format(cmdargs.pixsize))
+    (fd, tmpStack) = tempfile.mkstemp(dir=cmdargs.tempdir, prefix="tmp_allbands_",
+        suffix=".tif")
+    os.close(fd)
+    cmdargs.toa = tmpStack
+    tiffOptions = "-co COMPRESS=DEFLATE -co TILED=YES -co INTERLEAVE=BAND -co BIGTIFF=IF_SAFER"
+    cmd = "{gdalmerge} -q -of GTiff {tiffoptions} -separate -o {outstack} {inimgs}".format(
+        gdalmerge=gdalmergeCmd, tiffoptions=tiffOptions, outstack=cmdargs.toa, 
+        inimgs=' '.join(resampledBands))
     os.system(cmd)
+    
+    for fn in resampledBands:
+        os.remove(fn)
     
     return resampledBands
 
 
-def findGranuleXml(safedir):
+def chooseResampleMethod(outpixsize, inBandImg):
+    """
+    Choose the right resample method, given the image and the desired output pixel size
+    """
+    imginfo = fileinfo.ImageInfo(inBandImg)
+    inPixsize = imginfo.xRes
+    
+    if outpixsize == inPixsize:
+        resample = "near"
+    elif outpixsize > inPixsize:
+        resample = "average"
+    else:
+        resample = "cubic"
+    
+    return resample
+
+
+def findGranuleDir(safedir):
     """
     Search the given .SAFE directory, and find the main XML file at the GRANULE level.
     
@@ -211,10 +246,22 @@ def findGranuleXml(safedir):
         msg = "Found multiple GRANULE sub-directories: {}".format(dirstring)
         raise fmaskerrors.FmaskFileError(msg)
     
-    granuleDir = granuleDirList[0]
+    return granuleDir
+
+
+def findGranuleXml(granuleDir):
+    """
+    Find the granule-level XML file, given the granule dir
+    """
     xmlfile = "{}/MTD_TL.xml".format(granuleDir)
     if not os.path.exists(xmlfile):
-        raise fmaskerrors.FmaskFileError("Unable to find XML file {}".format(xmlfile))
+        # Might be old-format zipfile, so search for *.xml
+        xmlfilePattern = "{}/*.xml".format(granuleDir)
+        xmlfileList = glob.glob(xmlfilePattern)
+        if len(xmlfileList) == 1:
+            xmlfile = xmlfileList[0]
+        else:
+            raise fmaskerrors.FmaskFileError("Unable to find XML file {}".format(xmlfile))
     return xmlfile
 
 
@@ -223,7 +270,9 @@ def mainRoutine():
     Main routine that calls fmask
     """
     cmdargs = getCmdargs()
-    if cmdargs.safedir is not None:
+    tempStack = False
+    if cmdargs.safedir is not None or cmdargs.granuledir is not None:
+        tempStack = True
         resampledBands = makeStackAndAngles(cmdargs)
     
     anglesfile = checkAnglesFile(cmdargs.anglesfile, cmdargs.toa)
@@ -252,15 +301,11 @@ def mainRoutine():
     
     fmask.doFmask(fmaskFilenames, fmaskConfig)
     
-    if anglesfile != cmdargs.anglesfile:
-        # Must have been a temporary vrt, so remove it
+    if anglesfile != cmdargs.anglesfile or tempStack:
+        # Must have been a temporary, so remove it
         os.remove(anglesfile)
     
-    if cmdargs.safedir is not None:
-        # These must be temporary files created by this script
-        for fn in resampledBands:
-            if os.path.exists(fn):
-                os.remove(fn)
+    if tempStack and not cmdargs.keepintermediates:
         if os.path.exists(cmdargs.toa):
             os.remove(cmdargs.toa)
     
