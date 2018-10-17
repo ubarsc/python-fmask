@@ -20,6 +20,12 @@ Improvement and expansion of the Fmask algorithm: cloud, cloud
 shadow, and snow detection for Landsats 4-7, 8, and Sentinel 2 images
 Remote Sensing of Environment 159 (2015) 269-277.
 
+Also includes optional extension for Sentinel-2 from
+Frantz, D., Hass, E., Uhl, A., Stoffels, J., & Hill, J. (2018). 
+Improvement of the Fmask algorithm for Sentinel-2 images: Separating clouds 
+from bright surfaces based on parallax effects. 
+Remote Sensing of Environment 215, 471-481.
+
 Installation requires `Python <http://python.org/>`_, `numpy <http://www.numpy.org/>`_, `scipy <http://www.scipy.org/>`_,
 `GDAL <http://gdal.org/>`_ and `RIOS <http://rioshome.org/>`_ and the ability to compile C extensions for Python.
 It is licensed under GPL 3.
@@ -120,24 +126,24 @@ Here is an example of how to do this. This example works at 20m resolution, but 
 recipe can be varied as required. Be warned, processing at 10m resolution would be considerably
 slower, and is unlikely to be any more accurate.
 
-This makes a stack of ALL the bands, at the 20m resolution (a compromise between speed and detail).
-Bands are in order of numeric band number::
+This command will take a given .SAFE directory, find the right images, and create an
+output file called cloud.tif::
 
-    gdalbuildvrt -resolution user -tr 20 20 -separate allbands.vrt *_B0[1-8].jp2 *_B8A.jp2 *_B09.jp2 *_B1[0-2].jp2
+    fmask_sentinel2Stacked.py -o cloud.tif --safedir S2B_MSIL1C_20180918T235239_N0206_R130_T56JNQ_20180919T011001.SAFE
 
-Make a separate image of the per-pixel sun and satellite angles. ::
+When working with the old ESA zipfile format, which packed multiple tiles into a single SAFE-format
+zipfile, this approach will not work, as it won't know which tile to process. So, instead, use
+the option to specify the granule directory, as follows::
 
-    fmask_sentinel2makeAnglesImage.py -i ../*.xml -o angles.img
+    fmask_sentinel2Stacked.py -o cloud.tif --granuledir S2A_OPER_PRD_MSIL1C_PDMC_20160111T072442_R030_V20160111T000425_20160111T000425.SAFE/GRANULE/S2A_OPER_MSI_L1C_TL_SGS__20160111T051031_A002887_T56JNQ_N02.01
 
-Now create the cloud mask output image.
-Note that this assumes the bands are in a particular order (as created in the vrt, above)::
+This would also work on a new-format directory, but specifying the top .SAFE directory is easier. 
 
-    fmask_sentinel2Stacked.py -a allbands.vrt -z angles.img -o cloud.img
+There are command line options to modify many aspects of the algorithm's behaviour. 
 
-Note that the wild card patterns used in the above example commands are quite simple. This is
-mainly so that they will work with both the old and the new file naming conventions which ESA
-are using. Feel free to be more restrictive.
-
+There are two options which are now obsolete, for manually specifying a pre-stacked file
+of reflectance bands, and the image of angles. These should be considered obsolete, and are 
+replaced with the --safedir or --granuledir option, which take care of all internally. 
 
 Re-wrapping and Re-configuring
 ------------------------------
