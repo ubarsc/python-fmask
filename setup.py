@@ -67,6 +67,7 @@ setup( name = 'python-fmask',
         ext_package = 'fmask',
         ext_modules = extensionsList,
         license='LICENSE.txt',
+        data_files=[('', ['LICENSE.txt'])], # add this to tarball
         url='https://bitbucket.org/chchrsc/python-fmask',
         classifiers=['Intended Audience :: Developers',
           'Operating System :: OS Independent',
