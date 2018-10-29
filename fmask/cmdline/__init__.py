@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # This file is part of 'python-fmask' - a cloud masking module
 # Copyright (C) 2015  Neil Flood
 #
@@ -15,9 +14,4 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-from fmask.cmdline import sentinel2makeAnglesImage
-
-if __name__ == "__main__":
-    sentinel2makeAnglesImage.mainRoutine()
 

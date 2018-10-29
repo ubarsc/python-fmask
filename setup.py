@@ -33,6 +33,11 @@ except ImportError:
 # files that are need for the Windows install. 
 INCLUDE_WINDOWS_BAT = int(os.getenv('FMASK_INCLUDEBAT', '0')) > 0
 
+# Are we installing the command line scripts?
+# this is an experimental option for users who are
+# using the Python entry point feature of setuptools and Conda instead
+NO_INSTALL_CMDLINE = int(os.getenv('FMASK_NOCMDLINE', '0')) > 0
+
 # use the latest numpy API
 NUMPY_MACROS = ('NPY_NO_DEPRECATED_API', 'NPY_1_7_API_VERSION')
 
@@ -50,11 +55,14 @@ else:
     from distutils.core import setup
     extensionsList = []
 
-scriptList = glob.glob("bin/*.py")
-if sys.platform == 'win32' or INCLUDE_WINDOWS_BAT:
-    # include any .bat file helpers also (just one at this stage)
-    batList = glob.glob("bin/*.bat")
-    scriptList.extend(batList)
+if NO_INSTALL_CMDLINE:
+    scriptList = None
+else:
+    scriptList = glob.glob("bin/*.py")
+    if sys.platform == 'win32' or INCLUDE_WINDOWS_BAT:
+        # include any .bat file helpers also (just one at this stage)
+        batList = glob.glob("bin/*.bat")
+        scriptList.extend(batList)
     
 # do the setup
 setup( name = 'python-fmask',
@@ -63,7 +71,7 @@ setup( name = 'python-fmask',
         author = 'Neil Flood',
         author_email = 'neil.flood@dsiti.qld.gov.au',
         scripts = scriptList,
-        packages = ['fmask'],
+        packages = ['fmask', 'fmask/cmdline'],
         ext_package = 'fmask',
         ext_modules = extensionsList,
         license='LICENSE.txt',
