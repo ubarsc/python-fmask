@@ -160,7 +160,7 @@ def makeStackAndAngles(cmdargs):
         suffix=".tif")
     os.close(fd)
     xmlfile = findGranuleXml(cmdargs.granuledir)
-    cmd = "{} -i {} -o {}".format(anglesScript, xmlfile, anglesfile)
+    cmd = "{} {} -i {} -o {}".format(sys.executable, anglesScript, xmlfile, anglesfile)
     if cmdargs.verbose:
         print("Making angles image")
     os.system(cmd)
@@ -199,7 +199,8 @@ def makeStackAndAngles(cmdargs):
     os.close(fd)
     cmdargs.toa = tmpStack
     tiffOptions = "-co COMPRESS=DEFLATE -co TILED=YES -co INTERLEAVE=BAND -co BIGTIFF=IF_SAFER"
-    cmd = "{gdalmerge} -q -of GTiff {tiffoptions} -separate -o {outstack} {inimgs}".format(
+    cmd = "{python} {gdalmerge} -q -of GTiff {tiffoptions} -separate -o {outstack} {inimgs}".format(
+        python=sys.executable, # ensure we are launching python rather than relying on the OS to do the right thing (ie Windows)
         gdalmerge=gdalmergeCmd, tiffoptions=tiffOptions, outstack=cmdargs.toa, 
         inimgs=' '.join(resampledBands))
     os.system(cmd)
