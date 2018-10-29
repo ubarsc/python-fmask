@@ -20,13 +20,17 @@ reflective and thermal and runs the fmask on it.
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 from __future__ import print_function, division
 
+import os
 import sys
+import glob
 import argparse
+import tempfile
 from fmask import fmask
 from fmask import config
+from fmask import fmaskerrors
 
 from rios import fileinfo
-
+from rios.parallel.jobmanager import find_executable
 
 def getCmdargs():
     """
@@ -49,6 +53,9 @@ def getCmdargs():
         default=False, action='store_true', help='verbose output')
     parser.add_argument('-e', '--tempdir', 
         default='.', help="Temp directory to use (default=%(default)s)")
+    parser.add_argument('--scenedir', help='Path to the unzipped USGS Landsat scene. ' +
+        'Using this option will automatically create intermediate stacks of the input ' +
+        'bands, and so does NOT require --toa, --thermal, --saturation, --mtl or --anglesfile')
 
     params = parser.add_argument_group(title="Configurable parameters", description="""
         Changing these parameters will affect the way the algorithm works, and thus the 
@@ -77,20 +84,131 @@ def getCmdargs():
 
     cmdargs = parser.parse_args()
 
-    if (cmdargs.thermal is None or cmdargs.anglesfile is None or 
-            cmdargs.mtl is None is None or cmdargs.output is None
-            or cmdargs.toa is None):
-        parser.print_help()
-        sys.exit(1)
-    
     return cmdargs
 
+def makeStacksAndAngles(cmdargs):
+    """
+    Find the name of the MTL file.
+    Make an intermediate stacks of all the TOA reflectance and thermal bands.
+    Also make an image of the angles, saturation and TOA reflectance. 
+    Fill in the names of these in the cmdargs object. 
+
+    """
+    # find MTL file
+    wldpath = os.path.join(cmdargs.scenedir, '*_MTL.txt')
+    mtlList = glob.glob(wldpath)
+    if len(mtlList) != 1:
+        raise fmaskerrors.FmaskFileError("Cannot find a *_MTL.txt file in specified dir")
+
+    cmdargs.mtl = mtlList[0]
+
+    gdalmergeCmd = find_executable("gdal_merge.py")
+    saturationScript = find_executable('fmask_usgsLandsatSaturationMask.py')
+    anglesScript = find_executable('fmask_usgsLandsatMakeAnglesImage.py')
+    toaScript = find_executable('fmask_usgsLandsatTOA.py')
+
+    # we need to find the 'SPACECRAFT_ID' to work out the wildcards to use
+    mtlInfo = config.readMTLFile(cmdargs.mtl)
+    landsat = mtlInfo['SPACECRAFT_ID'][-1]
+    
+    if landsat == '4' or landsat == '5':
+        refWildcard = 'L*_B[1,2,3,4,5,7].TIF'
+        thermalWildcard = 'L*_B6.TIF'
+    elif landsat == '7':
+        refWildcard = 'L*_B[1,2,3,4,5,7].TIF'
+        thermalWildcard = 'L*_B6_VCID_?.TIF'
+    elif landsat == '8':
+        refWildcard = 'LC*_B[1-7,9].TIF'
+        thermalWildcard = 'LC*_B1[0,1].TIF'
+    else:
+        raise SystemExit('Unsupported Landsat sensor')
+
+    wldpath = os.path.join(cmdargs.scenedir, refWildcard)
+    refFiles = glob.glob(wldpath)
+    if len(refFiles) == 0:
+        raise fmaskerrors.FmaskFileError("Cannot find expected reflectance files for sensor")
+
+    wldpath = os.path.join(cmdargs.scenedir, thermalWildcard)
+    thermalFiles = glob.glob(wldpath)
+    if len(thermalFiles) == 0:
+        raise fmaskerrors.FmaskFileError("Cannot find expected thermal files for sensor")
+
+    if cmdargs.verbose:
+        print("Making stack of all reflectance bands")
+    (fd, tmpRefStack) = tempfile.mkstemp(dir=cmdargs.tempdir, prefix="tmp_allrefbands_",
+        suffix=".tif")
+    os.close(fd)
+
+    tiffOptions = "-co COMPRESS=DEFLATE -co TILED=YES -co INTERLEAVE=BAND -co BIGTIFF=IF_SAFER"
+    cmd = '{python} {gdalmerge} -q -of GTiff {tiffoptions} -separate -o {outstack} {inimgs}'.format(
+        python=sys.executable, gdalmerge=gdalmergeCmd, tiffoptions=tiffOptions, 
+        outstack=tmpRefStack, inimgs=' '.join(refFiles))
+    os.system(cmd)
+    # stash so we can delete later
+    cmdargs.refstack = tmpRefStack
+
+    if cmdargs.verbose:
+        print("Making stack of all thermal bands")
+    (fd, tmpThermStack) = tempfile.mkstemp(dir=cmdargs.tempdir, prefix="tmp_allthermalbands_",
+        suffix=".tif")
+    os.close(fd)
+
+    cmd = '{python} {gdalmerge} -q -of GTiff {tiffoptions} -separate -o {outstack} {inimgs}'.format(
+        python=sys.executable, gdalmerge=gdalmergeCmd, tiffoptions=tiffOptions, 
+        outstack=tmpThermStack, inimgs=' '.join(thermalFiles))
+    os.system(cmd)
+    cmdargs.thermal = tmpThermStack
+
+    # now the angles
+    if cmdargs.verbose:
+        print("Creating angles file")
+    (fd, anglesfile) = tempfile.mkstemp(dir=cmdargs.tempdir, prefix="angles_tmp_", 
+        suffix=".img")
+    os.close(fd)
+    cmd = '{python} {anglesscript} -m {mtl} -t {ref} -o {angles}'.format(
+        python=sys.executable, anglesscript=anglesScript, mtl=cmdargs.mtl,
+        ref=tmpRefStack, angles=anglesfile)
+    os.system(cmd)
+    cmdargs.anglesfile = anglesfile
+
+    # saturation
+    if cmdargs.verbose:
+        print("Creating saturation file")
+    (fd, saturationfile) = tempfile.mkstemp(dir=cmdargs.tempdir, prefix="saturation_tmp_", 
+        suffix=".img")
+    os.close(fd)
+    cmd = '{python} {satscript} -m {mtl} -i {ref} -o {saturation}'.format(
+        python=sys.executable, satscript=saturationScript, mtl=cmdargs.mtl,
+        ref=tmpRefStack, saturation=saturationfile)
+    os.system(cmd)
+    cmdargs.saturation = saturationfile
+
+    # TOA
+    if cmdargs.verbose:
+        print("Creating TOA file")
+    (fs, toafile) = tempfile.mkstemp(dir=cmdargs.tempdir, prefix="toa_tmp_", 
+        suffix=".img")
+    os.close(fd)
+    cmd = '{python} {toascript} -m {mtl} -z {angles} -i {ref} -o {toa}'.format(
+        python=sys.executable, toascript=toaScript, mtl=cmdargs.mtl,
+        ref=tmpRefStack, angles=anglesfile, toa=toafile)
+    os.system(cmd)
+    cmdargs.toa = toafile
             
 def mainRoutine():
     """
     Main routine that calls fmask
     """
     cmdargs = getCmdargs()
+    tempStack = False
+    if cmdargs.scenedir is not None:
+        tempStack = True
+        makeStacksAndAngles(cmdargs)
+
+    if (cmdargs.thermal is None or cmdargs.anglesfile is None or 
+            cmdargs.mtl is None is None or cmdargs.output is None
+            or cmdargs.toa is None):
+        raise SystemExit('Not all required input parameters supplied')
     
     # 1040nm thermal band should always be the first (or only) band in a
     # stack of Landsat thermal bands
@@ -139,3 +257,10 @@ def mainRoutine():
     fmaskConfig.setShadowBufferSize(int(cmdargs.shadowbufferdistance / toaImgInfo.xRes))
     
     fmask.doFmask(fmaskFilenames, fmaskConfig)
+
+    if tempStack and not cmdargs.keepintermediates:
+        for fn in [cmdargs.refstack, cmdargs.thermal, cmdargs.anglesfile, 
+                cmdargs.saturation, cmdargs.toa]:
+            if os.path.exists(fn):
+                os.remove(fn)
+
