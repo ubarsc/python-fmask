@@ -101,8 +101,8 @@ Landsat 7::
 
 Landsat 8::
 
-    gdal_merge.py -separate -of HFA -co COMPRESSED=YES -o ref.img LC8*_B[1-7,9].TIF
-    gdal_merge.py -separate -of HFA -co COMPRESSED=YES -o thermal.img LC8*_B1[0,1].TIF
+    gdal_merge.py -separate -of HFA -co COMPRESSED=YES -o ref.img LC*_B[1-7,9].TIF
+    gdal_merge.py -separate -of HFA -co COMPRESSED=YES -o thermal.img LC*_B1[0,1].TIF
 
 The next step is to create an image of the relevant angles, per-pixel, for use in subsequent steps.
 For Landsat, this can be done using::
