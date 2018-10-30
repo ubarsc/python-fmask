@@ -29,10 +29,6 @@ except ImportError:
     from distutils.core import setup
     withExtensions = False
 
-# When building the sdist on Linux we want the extra .bat
-# files that are need for the Windows install. 
-INCLUDE_WINDOWS_BAT = int(os.getenv('FMASK_INCLUDEBAT', '0')) > 0
-
 # Are we installing the command line scripts?
 # this is an experimental option for users who are
 # using the Python entry point feature of setuptools and Conda instead
@@ -59,10 +55,6 @@ if NO_INSTALL_CMDLINE:
     scriptList = None
 else:
     scriptList = glob.glob("bin/*.py")
-    if sys.platform == 'win32' or INCLUDE_WINDOWS_BAT:
-        # include any .bat file helpers also (just one at this stage)
-        batList = glob.glob("bin/*.bat")
-        scriptList.extend(batList)
     
 # do the setup
 setup( name = 'python-fmask',
