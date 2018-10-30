@@ -124,12 +124,12 @@ def makeStacksAndAngles(cmdargs):
         raise SystemExit('Unsupported Landsat sensor')
 
     wldpath = os.path.join(cmdargs.scenedir, refWildcard)
-    refFiles = glob.glob(wldpath)
+    refFiles = sorted(glob.glob(wldpath))
     if len(refFiles) == 0:
         raise fmaskerrors.FmaskFileError("Cannot find expected reflectance files for sensor")
 
     wldpath = os.path.join(cmdargs.scenedir, thermalWildcard)
-    thermalFiles = glob.glob(wldpath)
+    thermalFiles = sorted(glob.glob(wldpath))
     if len(thermalFiles) == 0:
         raise fmaskerrors.FmaskFileError("Cannot find expected thermal files for sensor")
 
