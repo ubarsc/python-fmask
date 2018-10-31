@@ -152,7 +152,10 @@ def makeStackAndAngles(cmdargs):
 
     # Find the other commands we need, even under Windoze
     anglesScript = find_executable("fmask_sentinel2makeAnglesImage.py")
-    gdalWarpCmd = find_executable("gdalwarp")
+    if sys.platform.startswith('win'):
+        gdalWarpCmd = find_executable("gdalwarp.exe")
+    else:
+        gdalWarpCmd = find_executable("gdalwarp")
     gdalmergeCmd = find_executable("gdal_merge.py")
 
     # Make the angles file
@@ -206,7 +209,11 @@ def makeStackAndAngles(cmdargs):
     os.system(cmd)
     
     for fn in resampledBands:
-        os.remove(fn)
+        try:
+            os.remove(fn)
+        except PermissionError:
+            # on Windows VRT files still appear to be in use
+            pass
     
     return resampledBands
 
