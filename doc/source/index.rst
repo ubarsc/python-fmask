@@ -69,10 +69,6 @@ Please note that the output format used is defined by `RIOS <http://rioshome.org
 See `RIOS documentation <http://rioshome.org/rios_imagewriter.html#rios.imagewriter.setDefaultDriver>`_
 for more information and how to change this using the environment variable $RIOS_DFLT_DRIVER.
 
-**Note:** these examples are for use in a Unix/Linux shell so that the filename wildcards
-get expanded properly. Windows users should prefix these commands with "fmask_expandWildcards" so that
-the commands get run with the wildcards expanded as they do in Unix/Linux.
-
 USGS Landsat
 ^^^^^^^^^^^^
 
@@ -83,40 +79,21 @@ in principle, be equivalent to the results of this code. Therefore, when process
 Collection-1 data, users may prefer the USGS-supplied masks.
 See `USGS QA Layer <https://landsat.usgs.gov/collectionqualityband>`_.
 
-The command line scripts supplied can process an untarred USGS Landsat scene. Firstly,
-the reflective and thermal bands must be stacked separately. This needs to be done
-in a different manner depending on the sensor. (**Note:** The wild cards shown here are for
-the more modern form of the USGS naming convention. Older forms would require slightly different
-wild card patterns. )
+The command line scripts supplied can process an untarred USGS Landsat scene. 
+Here is an example of how to do this. This command will take a given scene directory, 
+find the right images, and create an output file called cloud.img::
 
-Landsat 4&5::
-
-    gdal_merge.py -separate -of HFA -co COMPRESSED=YES -o ref.img L*_B[1,2,3,4,5,7].TIF
-    gdal_merge.py -separate -of HFA -co COMPRESSED=YES -o thermal.img L*_B6.TIF
-
-Landsat 7::
-
-    gdal_merge.py -separate -of HFA -co COMPRESSED=YES -o ref.img L*_B[1,2,3,4,5,7].TIF
-    gdal_merge.py -separate -of HFA -co COMPRESSED=YES -o thermal.img L*_B6_VCID_?.TIF
-
-Landsat 8::
-
-    gdal_merge.py -separate -of HFA -co COMPRESSED=YES -o ref.img LC*_B[1-7,9].TIF
-    gdal_merge.py -separate -of HFA -co COMPRESSED=YES -o thermal.img LC*_B1[0,1].TIF
-
-The next step is to create an image of the relevant angles, per-pixel, for use in subsequent steps.
-For Landsat, this can be done using::
-
-    fmask_usgsLandsatMakeAnglesImage.py -m *_MTL.txt -t ref.img -o angles.img
-
-Then mask and Top of Atmosphere reflectance must be calculated and finally the cloud mask itself::
-
-    fmask_usgsLandsatSaturationMask.py -i ref.img -m *_MTL.txt -o saturationmask.img
-    fmask_usgsLandsatTOA.py -i ref.img -m *_MTL.txt -z angles.img -o toa.img
-    fmask_usgsLandsatStacked.py -t thermal.img -a toa.img -m *_MTL.txt -z angles.img -s saturationmask.img -o cloud.img
+    fmask_usgsLandsatStacked.py -o cloud.img --scenedir LC08_L1TP_150033_20150413_20170410_01_T1
 
 If the thermal band is empty (for Landsat-8 with the SSM anomaly, after 2015-11-01) then it
 is ignored gracefully.
+
+There are command line options to modify many aspects of the algorithm's behaviour. 
+
+There are four options which are now obsolete, for manually specifying a pre-stacked file
+of reflectance bands, thermal bands, a saturation mask and the image of angles. 
+These should be considered obsolete, and are 
+replaced with the --scenedir option, which takes care of all internally. 
 
 Sentinel2
 ^^^^^^^^^
@@ -127,15 +104,15 @@ recipe can be varied as required. Be warned, processing at 10m resolution would 
 slower, and is unlikely to be any more accurate.
 
 This command will take a given .SAFE directory, find the right images, and create an
-output file called cloud.tif::
+output file called cloud.img::
 
-    fmask_sentinel2Stacked.py -o cloud.tif --safedir S2B_MSIL1C_20180918T235239_N0206_R130_T56JNQ_20180919T011001.SAFE
+    fmask_sentinel2Stacked.py -o cloud.img --safedir S2B_MSIL1C_20180918T235239_N0206_R130_T56JNQ_20180919T011001.SAFE
 
 When working with the old ESA zipfile format, which packed multiple tiles into a single SAFE-format
 zipfile, this approach will not work, as it won't know which tile to process. So, instead, use
 the option to specify the granule directory, as follows::
 
-    fmask_sentinel2Stacked.py -o cloud.tif --granuledir S2A_OPER_PRD_MSIL1C_PDMC_20160111T072442_R030_V20160111T000425_20160111T000425.SAFE/GRANULE/S2A_OPER_MSI_L1C_TL_SGS__20160111T051031_A002887_T56JNQ_N02.01
+    fmask_sentinel2Stacked.py -o cloud.img --granuledir S2A_OPER_PRD_MSIL1C_PDMC_20160111T072442_R030_V20160111T000425_20160111T000425.SAFE/GRANULE/S2A_OPER_MSI_L1C_TL_SGS__20160111T051031_A002887_T56JNQ_N02.01
 
 This would also work on a new-format directory, but specifying the top .SAFE directory is easier. 
 

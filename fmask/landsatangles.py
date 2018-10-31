@@ -72,8 +72,9 @@ def findImgCorners(img, imgInfo):
     """
     Find the corners of the data within the given template image
     Return a numpy array of (x, y) coordinates. The array has 2 columns, for X and Y.
-    Each row is a corner, in the order
-        top-left, top-right, bottom-left, bottom-right.
+    Each row is a corner, in the order:
+
+    top-left, top-right, bottom-left, bottom-right.
 
     Uses RIOS to pass through the image searching for non-null data,
     and find the extremes. Assumes we are working with a full-swathe Landsat
@@ -150,7 +151,9 @@ def findNadirLine(corners):
     """
     Return the equation of the nadir line, from the given corners of the swathe.
     Returns a numpy array of [b, m], for the equation
-        y = mx + b
+
+    y = mx + b
+
     giving the y coordinate of the nadir as a function of the x coordinate.
 
     """
