@@ -25,12 +25,21 @@ import sys
 import glob
 import argparse
 import tempfile
+import subprocess
 from fmask import fmask
 from fmask import config
 from fmask import fmaskerrors
 
 from rios import fileinfo
+from rios.imagewriter import DEFAULTDRIVERNAME, dfltDriverOptions
 from rios.parallel.jobmanager import find_executable
+
+# for GDAL command line utilities
+CMDLINECREATIONOPTIONS = []
+if DEFAULTDRIVERNAME in dfltDriverOptions:
+    for opt in dfltDriverOptions[DEFAULTDRIVERNAME]:
+        CMDLINECREATIONOPTIONS.append('-co')
+        CMDLINECREATIONOPTIONS.append(opt)
 
 def getCmdargs():
     """
@@ -136,27 +145,25 @@ def makeStacksAndAngles(cmdargs):
     if cmdargs.verbose:
         print("Making stack of all reflectance bands")
     (fd, tmpRefStack) = tempfile.mkstemp(dir=cmdargs.tempdir, prefix="tmp_allrefbands_",
-        suffix=".tif")
+        suffix=".img")
     os.close(fd)
 
-    tiffOptions = "-co COMPRESS=DEFLATE -co TILED=YES -co INTERLEAVE=BAND -co BIGTIFF=IF_SAFER"
-    cmd = '{python} {gdalmerge} -q -of GTiff {tiffoptions} -separate -o {outstack} {inimgs}'.format(
-        python=sys.executable, gdalmerge=gdalmergeCmd, tiffoptions=tiffOptions, 
-        outstack=tmpRefStack, inimgs=' '.join(refFiles))
-    os.system(cmd)
+    # use sys.executable so Windows works
+    subprocess.check_call([sys.executable, gdalmergeCmd, '-q', '-of', DEFAULTDRIVERNAME] +
+            CMDLINECREATIONOPTIONS + ['-separate', '-o', tmpRefStack] + refFiles)
+
     # stash so we can delete later
     cmdargs.refstack = tmpRefStack
 
     if cmdargs.verbose:
         print("Making stack of all thermal bands")
     (fd, tmpThermStack) = tempfile.mkstemp(dir=cmdargs.tempdir, prefix="tmp_allthermalbands_",
-        suffix=".tif")
+        suffix=".img")
     os.close(fd)
 
-    cmd = '{python} {gdalmerge} -q -of GTiff {tiffoptions} -separate -o {outstack} {inimgs}'.format(
-        python=sys.executable, gdalmerge=gdalmergeCmd, tiffoptions=tiffOptions, 
-        outstack=tmpThermStack, inimgs=' '.join(thermalFiles))
-    os.system(cmd)
+    subprocess.check_call([sys.executable, gdalmergeCmd, '-q', '-of', DEFAULTDRIVERNAME] +
+        CMDLINECREATIONOPTIONS + ['-separate', '-o', tmpThermStack] + thermalFiles)
+
     cmdargs.thermal = tmpThermStack
 
     # now the angles
@@ -165,10 +172,9 @@ def makeStacksAndAngles(cmdargs):
     (fd, anglesfile) = tempfile.mkstemp(dir=cmdargs.tempdir, prefix="angles_tmp_", 
         suffix=".img")
     os.close(fd)
-    cmd = '{python} {anglesscript} -m {mtl} -t {ref} -o {angles}'.format(
-        python=sys.executable, anglesscript=anglesScript, mtl=cmdargs.mtl,
-        ref=tmpRefStack, angles=anglesfile)
-    os.system(cmd)
+    subprocess.check_call([sys.executable, anglesScript, '-m', cmdargs.mtl, 
+        '-t', tmpRefStack, '-o', anglesfile])
+
     cmdargs.anglesfile = anglesfile
 
     # saturation
@@ -177,10 +183,9 @@ def makeStacksAndAngles(cmdargs):
     (fd, saturationfile) = tempfile.mkstemp(dir=cmdargs.tempdir, prefix="saturation_tmp_", 
         suffix=".img")
     os.close(fd)
-    cmd = '{python} {satscript} -m {mtl} -i {ref} -o {saturation}'.format(
-        python=sys.executable, satscript=saturationScript, mtl=cmdargs.mtl,
-        ref=tmpRefStack, saturation=saturationfile)
-    os.system(cmd)
+    subprocess.check_call([sys.executable, saturationScript, '-m', cmdargs.mtl,
+        '-i', tmpRefStack, '-o', saturationfile])
+
     cmdargs.saturation = saturationfile
 
     # TOA
@@ -189,10 +194,10 @@ def makeStacksAndAngles(cmdargs):
     (fs, toafile) = tempfile.mkstemp(dir=cmdargs.tempdir, prefix="toa_tmp_", 
         suffix=".img")
     os.close(fd)
-    cmd = '{python} {toascript} -m {mtl} -z {angles} -i {ref} -o {toa}'.format(
-        python=sys.executable, toascript=toaScript, mtl=cmdargs.mtl,
-        ref=tmpRefStack, angles=anglesfile, toa=toafile)
-    os.system(cmd)
+
+    subprocess.check_call([sys.executable, toaScript, '-m', cmdargs.mtl, 
+        '-i', tmpRefStack, '-z', anglesfile, '-o', toafile])
+
     cmdargs.toa = toafile
             
 def mainRoutine():

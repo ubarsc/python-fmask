@@ -26,13 +26,27 @@ import argparse
 import numpy
 import tempfile
 import glob
+import subprocess
 
 from rios import fileinfo
+from rios.imagewriter import DEFAULTDRIVERNAME, dfltDriverOptions
 from rios.parallel.jobmanager import find_executable
 
 from fmask import config
 from fmask import fmaskerrors
 from fmask import fmask
+
+# for GDAL command line utilities
+CMDLINECREATIONOPTIONS = []
+if DEFAULTDRIVERNAME in dfltDriverOptions:
+    for opt in dfltDriverOptions[DEFAULTDRIVERNAME]:
+        CMDLINECREATIONOPTIONS.append('-co')
+        CMDLINECREATIONOPTIONS.append(opt)
+
+if sys.platform.startswith('win'):
+    GDALWARPCMD = find_executable("gdalwarp.exe")
+else:
+    GDALWARPCMD = find_executable("gdalwarp")
 
 def getCmdargs():
     """
@@ -125,17 +139,16 @@ def checkAnglesFile(inputAnglesFile, toafile):
     """
     toaImgInfo = fileinfo.ImageInfo(toafile)
     anglesImgInfo = fileinfo.ImageInfo(inputAnglesFile)
+
     
     outputAnglesFile = inputAnglesFile
     if (toaImgInfo.xRes != anglesImgInfo.xRes) or (toaImgInfo.yRes != anglesImgInfo.yRes):
         (fd, vrtName) = tempfile.mkstemp(prefix='angles', suffix='.vrt')
         os.close(fd)
-        cmdFmt = ("gdalwarp -q -of VRT -tr {xres} {yres} -te {xmin} {ymin} {xmax} {ymax} "+
-            "-r near {infile}  {outfile} ")
-        cmd = cmdFmt.format(xres=toaImgInfo.xRes, yres=toaImgInfo.yRes, xmin=toaImgInfo.xMin,
-            ymin=toaImgInfo.yMin, xmax=toaImgInfo.xMax, ymax=toaImgInfo.yMax, 
-            outfile=vrtName, infile=inputAnglesFile)
-        os.system(cmd)
+        subprocess.check_call([GDALWARPCMD, '-q', '-of', 'VRT', '-tr', 
+            str(toaImgInfo.xRes), str(toaImgInfo.yRes), '-te', str(toaImgInfo.xMin),
+            str(toaImgInfo.yMin), str(toaImgInfo.xMax), str(toaImgInfo.yMax),
+            '-r', 'near', inputAnglesFile, vrtName])
         outputAnglesFile = vrtName
     
     return outputAnglesFile
@@ -152,21 +165,17 @@ def makeStackAndAngles(cmdargs):
 
     # Find the other commands we need, even under Windoze
     anglesScript = find_executable("fmask_sentinel2makeAnglesImage.py")
-    if sys.platform.startswith('win'):
-        gdalWarpCmd = find_executable("gdalwarp.exe")
-    else:
-        gdalWarpCmd = find_executable("gdalwarp")
     gdalmergeCmd = find_executable("gdal_merge.py")
 
     # Make the angles file
     (fd, anglesfile) = tempfile.mkstemp(dir=cmdargs.tempdir, prefix="angles_tmp_", 
-        suffix=".tif")
+        suffix=".img")
     os.close(fd)
     xmlfile = findGranuleXml(cmdargs.granuledir)
-    cmd = "{} {} -i {} -o {}".format(sys.executable, anglesScript, xmlfile, anglesfile)
     if cmdargs.verbose:
         print("Making angles image")
-    os.system(cmd)
+    subprocess.check_call([sys.executable, anglesScript, '-i', xmlfile, '-o', 
+                    anglesfile])
     cmdargs.anglesfile = anglesfile
     
     # Make a stack of the reflectance bands. Not that we do an explicit resample to the
@@ -186,11 +195,9 @@ def makeStackAndAngles(cmdargs):
 
         # Now make a resampled copy to the desired pixel size, using the right resample method
         resampleMethod = chooseResampleMethod(cmdargs.pixsize, inBandImg)
-        cmd = ("{gdalwarp} -q -tr {pixsize} {pixsize} -co TILED=YES -of VRT "+
-            "-r {resample} {inimg} {outimg}").format(gdalwarp=gdalWarpCmd, 
-            pixsize=cmdargs.pixsize, inimg=inBandImg, outimg=tmpBand,
-            resample=resampleMethod)
-        os.system(cmd)
+        subprocess.check_call([GDALWARPCMD, '-q', '-tr', str(cmdargs.pixsize),
+                str(cmdargs.pixsize), '-co', 'TILED=YES', '-of', 'VRT', '-r',
+                resampleMethod, inBandImg, tmpBand])
         
         resampledBands.append(tmpBand)
     
@@ -198,15 +205,13 @@ def makeStackAndAngles(cmdargs):
     if cmdargs.verbose:
         print("Making stack of all bands, at {}m pixel size".format(cmdargs.pixsize))
     (fd, tmpStack) = tempfile.mkstemp(dir=cmdargs.tempdir, prefix="tmp_allbands_",
-        suffix=".tif")
+        suffix=".img")
     os.close(fd)
     cmdargs.toa = tmpStack
-    tiffOptions = "-co COMPRESS=DEFLATE -co TILED=YES -co INTERLEAVE=BAND -co BIGTIFF=IF_SAFER"
-    cmd = "{python} {gdalmerge} -q -of GTiff {tiffoptions} -separate -o {outstack} {inimgs}".format(
-        python=sys.executable, # ensure we are launching python rather than relying on the OS to do the right thing (ie Windows)
-        gdalmerge=gdalmergeCmd, tiffoptions=tiffOptions, outstack=cmdargs.toa, 
-        inimgs=' '.join(resampledBands))
-    os.system(cmd)
+    # ensure we are launching python rather than relying on the OS to do the right thing (ie Windows)
+    subprocess.check_call([sys.executable, gdalmergeCmd, '-q', '-of', 
+            DEFAULTDRIVERNAME] + CMDLINECREATIONOPTIONS + ['-separate', 
+        '-o', cmdargs.toa] + resampledBands)
     
     for fn in resampledBands:
         try:
