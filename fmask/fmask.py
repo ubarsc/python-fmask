@@ -260,15 +260,39 @@ def doPotentialCloudFirstPass(fmaskFilenames, fmaskConfig, missingThermal):
     if fmaskConfig.sensor == config.FMASK_LANDSAT47:
         nullBandNdx = [config.BAND_BLUE, config.BAND_GREEN, config.BAND_RED, config.BAND_NIR, 
             config.BAND_SWIR1, config.BAND_SWIR2]
+        expectedNrefBands = 6
+        expectedNthermBands = 1
+
     elif fmaskConfig.sensor == config.FMASK_LANDSAT8:
         nullBandNdx = [config.BAND_BLUE, config.BAND_GREEN, config.BAND_RED, config.BAND_NIR, 
             config.BAND_SWIR1, config.BAND_SWIR2, config.BAND_CIRRUS]
+        expectedNrefBands = 8
+        expectedNthermBands = 2
+
     elif fmaskConfig.sensor == config.FMASK_SENTINEL2:
         # For Sentinel-2, only use the visible bands to define the null mask. This is because ESA
         # are leaving a lot of spurious nulls in their imagery, most particularly in the IR bands
         # and the cirrus band. 
         nullBandNdx = [config.BAND_BLUE, config.BAND_GREEN, config.BAND_RED]
+        expectedNrefBands = 13
+        expectedNthermBands = 0
+
+    else:
+        msg = 'Unknown sensor'
+        raise fmaskerrors.FmaskParameterError(msg)
+
     otherargs.bandsForRefNull = numpy.array([fmaskConfig.bands[i] for i in nullBandNdx])
+
+    # do a basic check that the input data has the correct number of bands
+    if refImgInfo.rasterCount != expectedNrefBands:
+        msg = ('Expected %d bands in Reflectance file. Found %d bands' % (expectedNrefBands, 
+                refImgInfo.rasterCount))
+        raise fmaskerrors.FmaskFileError(msg)
+
+    if not missingThermal and thermalImgInfo.rasterCount != expectedNthermBands:
+        msg = ('Expected %d bands in Thermal file. Found %d bands' % (expectedNthermBands, 
+                thermalImgInfo.rasterCount))
+        raise fmaskerrors.FmaskFileError(msg)
 
     applier.apply(potentialCloudFirstPass, infiles, outfiles, otherargs, controls=controls)
     
