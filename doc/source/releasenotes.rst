@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.5.1 (2018-11-26)
+--------------------------
+
+Enhancements
+  * Added better support for Conda packaging on Windows
+  * Upgraded license to GPL v3
+
 Version 0.5.0 (2018-10-18)
 --------------------------
 
