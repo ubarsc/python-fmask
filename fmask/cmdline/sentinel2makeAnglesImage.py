@@ -76,9 +76,16 @@ def mainRoutine():
     """
     cmdargs = getCmdargs()
     
-    info = sen2meta.Sen2TileMeta(filename=cmdargs.infile)
+    makeAngles(cmdargs.infile, cmdargs.outfile)
+
+
+def makeAngles(infile, outfile):
+    """
+    Callable main routine
+    """
+    info = sen2meta.Sen2TileMeta(filename=infile)
     
-    ds = createOutfile(cmdargs.outfile, info)
+    ds = createOutfile(outfile, info)
     nullValDN = 1000
     
     # Get a sorted list of the Sentinel-2 band names. Note that sometimes this

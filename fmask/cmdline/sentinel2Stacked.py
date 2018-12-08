@@ -34,6 +34,7 @@ from rios.parallel.jobmanager import find_executable
 
 from fmask import config
 from fmask import fmaskerrors
+from fmask.cmdline import sentinel2makeAnglesImage
 from fmask import fmask
 
 # for GDAL command line utilities
@@ -164,7 +165,6 @@ def makeStackAndAngles(cmdargs):
         cmdargs.granuledir = findGranuleDir(cmdargs.safedir)
 
     # Find the other commands we need, even under Windoze
-    anglesScript = find_executable("fmask_sentinel2makeAnglesImage.py")
     gdalmergeCmd = find_executable("gdal_merge.py")
 
     # Make the angles file
@@ -174,8 +174,7 @@ def makeStackAndAngles(cmdargs):
     xmlfile = findGranuleXml(cmdargs.granuledir)
     if cmdargs.verbose:
         print("Making angles image")
-    subprocess.check_call([sys.executable, anglesScript, '-i', xmlfile, '-o', 
-                    anglesfile])
+    sentinel2makeAnglesImage.makeAngles(xmlfile, anglesfile)
     cmdargs.anglesfile = anglesfile
     
     # Make a stack of the reflectance bands. Not that we do an explicit resample to the
