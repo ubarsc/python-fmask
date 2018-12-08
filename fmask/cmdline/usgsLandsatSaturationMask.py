@@ -42,8 +42,15 @@ def getCmdargs():
 
 def mainRoutine():
     cmdargs = getCmdargs()
-    
-    mtlInfo = config.readMTLFile(cmdargs.mtl)
+
+    makeSaturationMask(cmdargs.mtl, cmdargs.infile, cmdargs.output)
+
+
+def makeSaturationMask(mtlfile, infile, outfile):
+    """
+    Callable main routine
+    """
+    mtlInfo = config.readMTLFile(mtlfile)
     landsat = mtlInfo['SPACECRAFT_ID'][-1]
     
     if landsat == '4':
@@ -61,6 +68,5 @@ def mainRoutine():
     # bands are visible etc.
     fmaskConfig = config.FmaskConfig(sensor)
     
-    saturationcheck.makeSaturationMask(fmaskConfig, cmdargs.infile, 
-            cmdargs.output)
+    saturationcheck.makeSaturationMask(fmaskConfig, infile, outfile)
 

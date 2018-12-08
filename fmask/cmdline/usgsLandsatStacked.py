@@ -26,9 +26,11 @@ import glob
 import argparse
 import tempfile
 import subprocess
-from fmask import fmask
+from fmask import landsatTOA
+from fmask.cmdline import usgsLandsatMakeAnglesImage, usgsLandsatSaturationMask
 from fmask import config
 from fmask import fmaskerrors
+from fmask import fmask
 
 from rios import fileinfo
 from rios.imagewriter import DEFAULTDRIVERNAME, dfltDriverOptions
@@ -112,9 +114,6 @@ def makeStacksAndAngles(cmdargs):
     cmdargs.mtl = mtlList[0]
 
     gdalmergeCmd = find_executable("gdal_merge.py")
-    saturationScript = find_executable('fmask_usgsLandsatSaturationMask.py')
-    anglesScript = find_executable('fmask_usgsLandsatMakeAnglesImage.py')
-    toaScript = find_executable('fmask_usgsLandsatTOA.py')
 
     # we need to find the 'SPACECRAFT_ID' to work out the wildcards to use
     mtlInfo = config.readMTLFile(cmdargs.mtl)
@@ -172,9 +171,7 @@ def makeStacksAndAngles(cmdargs):
     (fd, anglesfile) = tempfile.mkstemp(dir=cmdargs.tempdir, prefix="angles_tmp_", 
         suffix=".img")
     os.close(fd)
-    subprocess.check_call([sys.executable, anglesScript, '-m', cmdargs.mtl, 
-        '-t', tmpRefStack, '-o', anglesfile])
-
+    usgsLandsatMakeAnglesImage.makeAngles(cmdargs.mtl, tmpRefStack, anglesfile)
     cmdargs.anglesfile = anglesfile
 
     # saturation
@@ -183,9 +180,7 @@ def makeStacksAndAngles(cmdargs):
     (fd, saturationfile) = tempfile.mkstemp(dir=cmdargs.tempdir, prefix="saturation_tmp_", 
         suffix=".img")
     os.close(fd)
-    subprocess.check_call([sys.executable, saturationScript, '-m', cmdargs.mtl,
-        '-i', tmpRefStack, '-o', saturationfile])
-
+    usgsLandsatSaturationMask.makeSaturationMask(cmdargs.mtl, tmpRefStack, saturationfile)
     cmdargs.saturation = saturationfile
 
     # TOA
@@ -194,10 +189,7 @@ def makeStacksAndAngles(cmdargs):
     (fs, toafile) = tempfile.mkstemp(dir=cmdargs.tempdir, prefix="toa_tmp_", 
         suffix=".img")
     os.close(fd)
-
-    subprocess.check_call([sys.executable, toaScript, '-m', cmdargs.mtl, 
-        '-i', tmpRefStack, '-z', anglesfile, '-o', toafile])
-
+    landsatTOA.makeTOAReflectance(tmpRefStack, cmdargs.mtl, anglesfile, toafile)
     cmdargs.toa = toafile
             
 def mainRoutine():

@@ -81,15 +81,22 @@ def mainRoutine():
     Main routine
     """
     cmdargs = getCmdargs()
+
+    makeAngles(cmdargs.mtl, cmdargs.templateimg, cmdargs.outfile)
+
+
+def makeAngles(mtlfile, templateimg, outfile):
+    """
+    Callable main routine
+    """
+    mtlInfo = config.readMTLFile(mtlfile)
     
-    mtlInfo = config.readMTLFile(cmdargs.mtl)
-    
-    imgInfo = fileinfo.ImageInfo(cmdargs.templateimg)
-    corners = landsatangles.findImgCorners(cmdargs.templateimg, imgInfo)
+    imgInfo = fileinfo.ImageInfo(templateimg)
+    corners = landsatangles.findImgCorners(templateimg, imgInfo)
     nadirLine = landsatangles.findNadirLine(corners)
     
     extentSunAngles = landsatangles.sunAnglesForExtent(imgInfo, mtlInfo)
     satAzimuth = landsatangles.satAzLeftRight(nadirLine)
     
-    landsatangles.makeAnglesImage(cmdargs.templateimg, cmdargs.outfile, 
+    landsatangles.makeAnglesImage(templateimg, outfile, 
         nadirLine, extentSunAngles, satAzimuth, imgInfo)
