@@ -187,6 +187,7 @@ def makeStackAndAngles(cmdargs):
     for band in bandList:
         (fd, tmpBand) = tempfile.mkstemp(dir=cmdargs.tempdir, prefix="tmp_{}_".format(band),
             suffix=".vrt")
+        os.close(fd)
         inBandImgList = glob.glob("{}/*_{}.jp2".format(imgDir, band))
         if len(inBandImgList) != 1:
             raise fmaskerrors.FmaskFileError("Cannot find input band {}".format(band))
@@ -213,11 +214,7 @@ def makeStackAndAngles(cmdargs):
         '-o', cmdargs.toa] + resampledBands)
     
     for fn in resampledBands:
-        try:
-            os.remove(fn)
-        except PermissionError:
-            # on Windows VRT files still appear to be in use
-            pass
+        os.remove(fn)
     
     return resampledBands
 
