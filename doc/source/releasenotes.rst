@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.5.2 (2018-12-12)
+--------------------------
+
+Enhancements
+  * Fix issue with entry points on Windows
+  * Ensure temporary files are removed on Windows
+
 Version 0.5.1 (2018-11-26)
 --------------------------
 
