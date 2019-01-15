@@ -1,11 +1,19 @@
 Release Notes
 =============
 
+Version 0.5.3 (2019-01-15)
+--------------------------
+
+Bug Fixes
+  * Fixed problem with new error checks which broke Landsat-7 case
+
 Version 0.5.2 (2018-12-12)
 --------------------------
 
-Enhancements
+Bug Fixes
   * Fix issue with entry points on Windows
+
+Enhancements
   * Ensure temporary files are removed on Windows
 
 Version 0.5.1 (2018-11-26)
