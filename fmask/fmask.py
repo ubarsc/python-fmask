@@ -340,8 +340,7 @@ def potentialCloudFirstPass(info, inputs, outputs, otherargs):
     for n in [blue, green, red]:
         whiteness = whiteness + numpy.absolute((ref[n] - meanVis) / meanVis)
 
-    # Modified as per Frantz 2015, corresponding to his "darkness test" - make this a parameter......
-    whitenessTest = ((whiteness < fmaskConfig.Eqn2WhitenessThresh) & (meanVis > 0.15))
+    whitenessTest = (whiteness < fmaskConfig.Eqn2WhitenessThresh)
     
     # Haze test, equation 3
     hazeTest = ((ref[blue] - 0.5 * ref[red] - 0.08) > 0)
