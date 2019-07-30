@@ -139,14 +139,14 @@ def doFmask(fmaskFilenames, fmaskConfig):
         fmaskConfig.setShadowBufferSize(3)
     
     if fmaskConfig.verbose: print("Cloud layer, pass 1")
-    (pass1file, Twater, Tlow, Thigh, NIR_17) = doPotentialCloudFirstPass(
+    (pass1file, Twater, Tlow, Thigh, NIR_17, nonNullCount) = doPotentialCloudFirstPass(
         fmaskFilenames, fmaskConfig, missingThermal)
     if fmaskConfig.verbose: print("  Twater=", Twater, "Tlow=", Tlow, "Thigh=", Thigh, "NIR_17=", 
-        NIR_17)
+        NIR_17, "nonNullCount=", nonNullCount)
     
     if fmaskConfig.verbose: print("Cloud layer, pass 2")
     (pass2file, landThreshold) = doPotentialCloudSecondPass(fmaskFilenames, 
-        fmaskConfig, pass1file, Twater, Tlow, Thigh, missingThermal)
+        fmaskConfig, pass1file, Twater, Tlow, Thigh, missingThermal, nonNullCount)
     if fmaskConfig.verbose: print("  landThreshold=", landThreshold)
 
     if fmaskConfig.verbose: print("Cloud layer, pass 3")
@@ -253,6 +253,7 @@ def doPotentialCloudFirstPass(fmaskFilenames, fmaskConfig, missingThermal):
         otherargs.thermalNull = thermalImgInfo.nodataval[0]
         if otherargs.thermalNull is None:
             otherargs.thermalNull = 0
+    otherargs.nonNullCount = 0
     
     # Which reflective bands do we use to make a null mask. The numbers being set here 
     # are zero-based index numbers for use as array indexes. It should be just all bands, 
@@ -289,7 +290,7 @@ def doPotentialCloudFirstPass(fmaskFilenames, fmaskConfig, missingThermal):
         # Not enough land to work this out, so guess a low value. 
         b4_17 = 0.01
     
-    return (outfiles.pass1, Twater, Tlow, Thigh, b4_17)
+    return (outfiles.pass1, Twater, Tlow, Thigh, b4_17, otherargs.nonNullCount)
 
 
 def potentialCloudFirstPass(info, inputs, outputs, otherargs):
@@ -436,6 +437,7 @@ def potentialCloudFirstPass(info, inputs, outputs, otherargs):
         otherargs.clearLandBT_hist = accumHist(otherargs.clearLandBT_hist, scaledBT[clearLand])
     scaledB4 = (ref[nir] * B4_SCALE).astype(numpy.uint8)
     otherargs.clearLandB4_hist = accumHist(otherargs.clearLandB4_hist, scaledB4[clearLand])
+    otherargs.nonNullCount += numpy.count_nonzero(~nullmask)
 
 
 def accumHist(counts, vals):
@@ -489,7 +491,7 @@ def calcBTthresholds(otherargs):
 PROB_SCALE = 100.0
 
 def doPotentialCloudSecondPass(fmaskFilenames, fmaskConfig, pass1file, 
-                Twater, Tlow, Thigh, missingThermal):
+                Twater, Tlow, Thigh, missingThermal, nonNullCount):
     """
     Second pass for potential cloud layer
     """
@@ -522,17 +524,13 @@ def doPotentialCloudSecondPass(fmaskFilenames, fmaskConfig, pass1file,
     applier.apply(potentialCloudSecondPass, infiles, outfiles, otherargs, controls=controls)
     
     # Equation 17
-    if otherargs.lCloudProb_hist.sum() < 100:
+    # Need at least 3% of nonnull pixels as clear land for this to be reliable. 
+    minPixelsReqd = 0.03 * nonNullCount
+    if otherargs.lCloudProb_hist.sum() < minPixelsReqd:
         # Almost no clear land pixels
         landThreshold = None
     else:
-        eqn17pcntile = 82.5
-        if otherargs.lCloudProb_hist.sum() < 20000:
-            # If we do not have many clear land pixels, we need to pick our threshold from 
-            # a much lower percentile, to avoid the contamination by missed cloud. 
-            # The 20000 pixels was pretty arbitrary. NF. 
-            eqn17pcntile = 30
-        landThreshold = scoreatpcnt(otherargs.lCloudProb_hist, eqn17pcntile)
+        landThreshold = scoreatpcnt(otherargs.lCloudProb_hist, 82.5)
     if landThreshold is not None:
         landThreshold = landThreshold / PROB_SCALE + fmaskConfig.Eqn17CloudProbThresh
     else:
