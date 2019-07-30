@@ -522,7 +522,17 @@ def doPotentialCloudSecondPass(fmaskFilenames, fmaskConfig, pass1file,
     applier.apply(potentialCloudSecondPass, infiles, outfiles, otherargs, controls=controls)
     
     # Equation 17
-    landThreshold = scoreatpcnt(otherargs.lCloudProb_hist, 82.5)
+    if otherargs.lCloudProb_hist.sum() < 100:
+        # Almost no clear land pixels
+        landThreshold = None
+    else:
+        eqn17pcntile = 82.5
+        if otherargs.lCloudProb_hist.sum() < 20000:
+            # If we do not have many clear land pixels, we need to pick our threshold from 
+            # a much lower percentile, to avoid the contamination by missed cloud. 
+            # The 20000 pixels was pretty arbitrary. NF. 
+            eqn17pcntile = 30
+        landThreshold = scoreatpcnt(otherargs.lCloudProb_hist, eqn17pcntile)
     if landThreshold is not None:
         landThreshold = landThreshold / PROB_SCALE + fmaskConfig.Eqn17CloudProbThresh
     else:
