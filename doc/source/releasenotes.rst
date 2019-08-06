@@ -1,6 +1,29 @@
 Release Notes
 =============
 
+Version 0.5.4 (2019-08-06)
+--------------------------
+
+Bug Fixes
+    * Removed the "darkness" test, suggested by Franz (2015), which had inadvertently been
+      added from a test branch into version 0.5.0. This test aims to remove a certain 
+      type of false positive cloud, but larger tests suggest that it removes more true 
+      positives, and so should not have been included. 
+    * Added new logic to cope with cases of nearly 100% cloud cover. In cases where only 
+      very small amounts of land are visible, the dynamic threshold for the "clear land
+      probability" is too contaminated to be usable. If less than 3% of the image is 
+      clear land, then a fallback threshold is used instead. This avoids images which
+      are entirely covered in cloud from being classed as almost entirely cloud-free. 
+      This particularly affected Sentinel-2, where the thermal is not available to 
+      catch these cases anyway. 
+
+Documentation
+    * Added a disclaimer to the front page, emphasizing that all errors are ours, and 
+      the authors of the original papers bear no responsibility. 
+    * Added a note to the front page that we have done some testing of the proposed
+      Fmask4 changes from Qiu et al, 2019, and are unsure whether they help or not, 
+      so have not implemented them. 
+
 Version 0.5.3 (2019-01-15)
 --------------------------
 
