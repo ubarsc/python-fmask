@@ -33,6 +33,18 @@ It is licensed under GPL 3.
 Originally developed by Neil Flood at `DSITI <https://www.qld.gov.au/dsiti/>`_
 and additional work funded by `Landcare Research <http://www.landcareresearch.co.nz>`_.
 
+Later Fmask4 Methods
+--------------------
+A later publication by Qiu et al, 2019, suggests a number of further changes to Fmask, and
+gives this newer version the name of Fmask4. We have done some testing of these suggested 
+methods, using Landsat and Sentinel-2 data over large areas of Australia. We found that 
+overall, the losses outweighed the benefits, and so are unsure whether to 
+implement these changes. Currently we have chosen not to. 
+
+Qiu, S., Zhu, Z., & He, B. (2019). Fmask 4.0: Improved cloud and cloud shadow 
+detection in Landsats 4-8 and Sentinel-2 imagery. Remote Sensing of Environment, 231, 111205.
+
+
 
 Disclaimer and Acknowledgement
 ------------------------------
