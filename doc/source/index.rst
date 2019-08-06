@@ -34,6 +34,13 @@ Originally developed by Neil Flood at `DSITI <https://www.qld.gov.au/dsiti/>`_
 and additional work funded by `Landcare Research <http://www.landcareresearch.co.nz>`_.
 
 
+Disclaimer and Acknowledgement
+------------------------------
+This Python implementation has followed the work of the authors cited above, and we
+offer our thanks for their work. None of them were involved in the creation of
+this Python implementation, and all errors made are our own responsibility. 
+
+
 Philosophy
 ----------
 This package implements the Fmask algorithm as a Python module. It is intended that this
