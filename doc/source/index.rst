@@ -162,7 +162,7 @@ command line to install python-fmask: ::
 
     conda config --add channels conda-forge
     conda create -n myenv python-fmask
-    source activate myenv # omit 'source' on Windows
+    conda activate myenv
 
 Applications that use python-fmask
 ----------------------------------
