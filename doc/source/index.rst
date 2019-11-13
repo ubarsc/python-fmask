@@ -151,7 +151,7 @@ corresponds to which wavelength band.
 
 Downloads
 ---------
-Get the source as a bundle from `BitBucket <https://bitbucket.org/chchrsc/python-fmask/downloads>`_.
+Get the source as a bundle from `GitHub <https://github.com/ubarsc/python-fmask/releases>`_.
 Release notes for each version can be read in :doc:`releasenotes`. To install from source,
 read the INSTALL.txt file included inside the source bundle.
 
@@ -172,7 +172,7 @@ Applications that use python-fmask
 Issues
 ------
 
-Please log bugs encountered with the `Issue Tracker <https://bitbucket.org/chchrsc/python-fmask/issues?status=new&status=open>`_.
+Please log bugs encountered with the `Issue Tracker <https://github.com/ubarsc/python-fmask/issues>`_.
 
 
 Python developer documentation
