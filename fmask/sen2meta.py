@@ -175,6 +175,10 @@ class Sen2TileMeta(object):
         srUTM.ImportFromEPSG(int(self.epsg))
         srLL = osr.SpatialReference()
         srLL.ImportFromEPSG(4326)
+        if hasattr(srLL, 'SetAxisMappingStrategy'):
+            # We are in GDAL >= 3, so guard against axis swapping
+            srLL.SetAxisMappingStrategy(osr.OAMS_TRADITIONAL_GIS_ORDER)
+            srUTM.SetAxisMappingStrategy(osr.OAMS_TRADITIONAL_GIS_ORDER)
         tr = osr.CoordinateTransformation(srUTM, srLL)
         (longitude, latitude, z) = tr.TransformPoint(ctrX, ctrY)
         return (longitude, latitude)
