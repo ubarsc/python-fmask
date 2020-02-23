@@ -161,6 +161,7 @@ under the 'conda-forge' channel. Once you have installed
 command line to install python-fmask: ::
 
     conda config --add channels conda-forge
+    conda config --set channel_priority strict
     conda create -n myenv python-fmask
     conda activate myenv
 
