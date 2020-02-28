@@ -45,9 +45,14 @@ if DEFAULTDRIVERNAME in dfltDriverOptions:
         CMDLINECREATIONOPTIONS.append(opt)
 
 if sys.platform.startswith('win'):
-    GDALWARPCMD = find_executable("gdalwarp.exe")
+    GDALWARPCMDNAME = "gdalwarp.exe"
 else:
-    GDALWARPCMD = find_executable("gdalwarp")
+    GDALWARPCMDNAME = "gdalwarp"
+GDALWARPCMD = find_executable(GDALWARPCMDNAME)
+if GDALWARPCMD is None:
+    msg = "Unable to find {} command. Check installation of GDAL package".format(GDALWARPCMDNAME)
+    raise fmaskerrors.FmaskInstallationError(msg)
+
 
 def getCmdargs():
     """
@@ -166,6 +171,9 @@ def makeStackAndAngles(cmdargs):
 
     # Find the other commands we need, even under Windoze
     gdalmergeCmd = find_executable("gdal_merge.py")
+    if gdalmergeCmd is None:
+        msg = "Unable to find gdal_merge.py command. Check installation of GDAL package. "
+        raise fmaskerrors.FmaskInstallationError(msg)
 
     # Make the angles file
     (fd, anglesfile) = tempfile.mkstemp(dir=cmdargs.tempdir, prefix="angles_tmp_", 

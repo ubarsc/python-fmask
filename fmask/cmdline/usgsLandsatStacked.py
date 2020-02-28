@@ -114,6 +114,9 @@ def makeStacksAndAngles(cmdargs):
     cmdargs.mtl = mtlList[0]
 
     gdalmergeCmd = find_executable("gdal_merge.py")
+    if gdalmergeCmd is None:
+        msg = "Unable to find gdal_merge.py command. Check installation of GDAL package. "
+        raise fmaskerrors.FmaskInstallationError(msg)
 
     # we need to find the 'SPACECRAFT_ID' to work out the wildcards to use
     mtlInfo = config.readMTLFile(cmdargs.mtl)
