@@ -1287,32 +1287,21 @@ def maskAndBuffer(info, inputs, outputs, otherargs):
     # Buffer the cloud
     if hasattr(otherargs, 'bufferkernel'):
         cloud = maximum_filter(cloud, footprint=otherargs.bufferkernel)
-
-    # Mask the shadow, against the buffered cloud, and the nullmask
-    shadow[cloud] = False
     
-    # Mask the snow against the cloud and shadow
-    mask = cloud | shadow
-    snow[mask] = False
-    
-    # Mask the water against the cloud, shadow and snow
-    mask = cloud | shadow | snow
-    water[mask] = False
-    
-    # now convert these masks to 0 - null
+    # now convert these masks to
+    # 0 - null
     # 1 - not null and not mask
     # 2 - cloud
     # 3 - cloud shadow
     # 4 - snow
     # 5 - water
-    outNullval = OUTCODE_NULL
-    out = numpy.zeros(cloud.shape, dtype=numpy.uint8)
-    out.fill(OUTCODE_CLEAR)
-    out[cloud] = OUTCODE_CLOUD
-    out[shadow] = OUTCODE_SHADOW
-    out[snow] = OUTCODE_SNOW
+    out = numpy.full(cloud.shape, fill_value=OUTCODE_CLEAR, dtype=numpy.uint8)
     out[water] = OUTCODE_WATER
-    out[resetNullmask] = outNullval
+    out[snow] = OUTCODE_SNOW
+    out[shadow] = OUTCODE_SHADOW
+    out[cloud] = OUTCODE_CLOUD
+    out[resetNullmask] = OUTCODE_NULL
+    
     outputs.out = numpy.array([out])
 
 
