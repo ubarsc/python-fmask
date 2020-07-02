@@ -54,7 +54,7 @@ if GDALWARPCMD is None:
     raise fmaskerrors.FmaskInstallationError(msg)
 
 
-def getCmdargs():
+def getCmdargs(argv=None):
     """
     Get command line arguments
     """
@@ -282,11 +282,11 @@ def findGranuleXml(granuleDir):
     return xmlfile
 
 
-def mainRoutine():
+def mainRoutine(argv=None):
     """
     Main routine that calls fmask
     """
-    cmdargs = getCmdargs()
+    cmdargs = getCmdargs(argv)
     tempStack = False
     if cmdargs.safedir is not None or cmdargs.granuledir is not None:
         tempStack = True
