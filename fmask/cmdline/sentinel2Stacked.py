@@ -114,7 +114,7 @@ def getCmdargs(argv=None):
     params.add_argument("--parallaxtest", default=False, action="store_true",
         help="Turn on the parallax displacement test from Frantz (2018) (default will not use this test)")
 
-    cmdargs = parser.parse_args()
+    cmdargs = parser.parse_args(argv)
 
     # Do some sanity checks on what was given
     safeDirGiven = (cmdargs.safedir is not None)
