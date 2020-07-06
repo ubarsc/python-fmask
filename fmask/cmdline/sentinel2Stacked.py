@@ -57,6 +57,12 @@ if GDALWARPCMD is None:
 def getCmdargs(argv=None):
     """
     Get command line arguments
+    
+    If argv is given, it should be a list of pairs of parameter and arguments like in command line.
+    See getCmdArgs(['-h']) for details on available parameters.
+    Example: getCmdArgs(['--safedir', '<.SAFE directory>', '-o', '<output file>'])
+    
+    If argv is None or not given, command line sys.args are used, see argparse.parse_args.
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("--safedir", help=("Name of .SAFE directory, as unzipped from " +
@@ -285,6 +291,12 @@ def findGranuleXml(granuleDir):
 def mainRoutine(argv=None):
     """
     Main routine that calls fmask
+    
+    If argv is given, it should be a list of pairs of parameter and arguments like in command line.
+    See mainRoutine(['-h']) for details on available parameters.
+    Example: mainRoutine(['--safedir', '<.SAFE directory>', '-o', '<output file>'])
+    
+    If argv is None or not given, command line sys.args are used, see argparse.parse_args.
     """
     cmdargs = getCmdargs(argv)
     tempStack = False
