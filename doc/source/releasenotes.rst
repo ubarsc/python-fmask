@@ -1,6 +1,18 @@
 Release Notes
 =============
 
+Version 0.5.5 (2020-09-01)
+--------------------------
+
+Bug Fixes
+    * Cope with the axis swapping behavour of GDAL 3.x. 
+    * Display proper error messages if missing gdalwarp or gdal_merge.py.
+    
+Enhancements
+    * Improve readability of code in masking step.
+    * Allow sentinel2Stacked to be called directly from Python.
+
+
 Version 0.5.4 (2019-08-06)
 --------------------------
 
