@@ -76,6 +76,7 @@ class FmaskConfig(object):
     strictFmask = False
     tempDir = '.'
     TOARefScaling = 10000.0
+    TOARefDNoffsetDict = None
     # Minimum number of pixels in a single cloud (before buffering). A non-zero value
     # would allow filtering of very small clouds. 
     minCloudSize_pixels = 0
@@ -188,11 +189,42 @@ class FmaskConfig(object):
     def setTOARefScaling(self, scaling):
         """
         Set the scaling used in the Top of Atmosphere reflectance
-        image. DN's are divided by this number to get reflectance.
-        This defaults to 1000.0
-        
+        image. The calculation is done as
+
+        ref = (dn + dnOffset) / scaling
+
+        and so is used in conjunction with the offset values 
+        (see setTOARefOffsets). 
+
+        The dnOffset was added in 2021 to cope with ESA's absurd 
+        decision to suddenly introduce an offset in their Sentinel-2 
+        TOA reflectance imagery. For Landsat, there is no need for 
+        it ever to be non-zero. 
+
         """
         self.TOARefScaling = scaling
+
+    def setTORefOffsetDict(self, offsetDict):
+        """
+        Set the reflectance offsets to the given list. 
+        This should contain an offset value for each band used with
+        the Fmask code. The keys are the named constants in the 
+        config module, BAND_*. 
+
+        The offset is added to the corresponding band pixel values
+        before dividing by the scaling value. 
+
+        This facility is made available largely for use with Sentinel-2,
+        after ESA unilaterally starting using non-zero offsets in their
+        Level-1C imagery (Nov 2021). However, it can be used 
+        with Landsat if required. 
+
+        """
+        if len(offsetDict) != len(self.bands):
+            msg = "Must supply offsets for all bands being used"
+            raise fmaskerrors.FmaskParameterError(msg)
+
+        self.TOARefDNoffsetDict = offsetDict
 
     def setKeepIntermediates(self, keepIntermediates):
         """
