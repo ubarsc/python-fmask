@@ -140,7 +140,7 @@ def doFmask(fmaskFilenames, fmaskConfig):
             reflectance offsets be explicitly set. This is due to ESA's 
             breaking changes in their processing version 04.00 (Nov 2021),
             which added offsets to the imagery. 
-            See fmask.config.setTORefOffsetDict() for more details. 
+            See fmask.config.setTOARefOffsetDict() for more details. 
             Also, sen2meta.Sen2ZipfileMeta can read the necessary XML file,
             and fmask.cmdline.sentinel2Stacked.makeRefOffsetDict for further
             sample code. 

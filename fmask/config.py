@@ -204,7 +204,7 @@ class FmaskConfig(object):
         """
         self.TOARefScaling = scaling
 
-    def setTORefOffsetDict(self, offsetDict):
+    def setTOARefOffsetDict(self, offsetDict):
         """
         Set the reflectance offsets to the given list. 
         This should contain an offset value for each band used with

@@ -327,7 +327,7 @@ def readTopLevelMeta(cmdargs):
 def makeRefOffsetDict(topMeta):
     """
     Take the given sen2meta.Sen2ZipfileMeta object and convert it
-    into a dictionary suitable to give to FmaskConfig.setTORefOffsetDict.
+    into a dictionary suitable to give to FmaskConfig.setTOARefOffsetDict.
 
     """
     # This dictionary established a correspondance between the string
@@ -380,7 +380,7 @@ def mainRoutine(argv=None):
     fmaskConfig.setTempDir(cmdargs.tempdir)
     fmaskConfig.setTOARefScaling(topMeta.scaleVal)
     offsetDict = makeRefOffsetDict(topMeta)
-    fmaskConfig.setTORefOffsetDict(offsetDict)
+    fmaskConfig.setTOARefOffsetDict(offsetDict)
     fmaskConfig.setMinCloudSize(cmdargs.mincloudsize)
     fmaskConfig.setEqn17CloudProbThresh(cmdargs.cloudprobthreshold / 100)    # Note conversion from percentage
     fmaskConfig.setEqn20NirSnowThresh(cmdargs.nirsnowthreshold)
