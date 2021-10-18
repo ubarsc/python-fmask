@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.5.6 (2021-10-19)
+--------------------------
+
+Enhancements
+    * Cope with ESA's sudden inclusion of radiometric offsets in their
+      Sentinel-2 reflectance imagery. Using earlier python-fmask versions 
+      with the new ESA files will result in incorrect answers. 
+
 Version 0.5.5 (2020-09-01)
 --------------------------
 
