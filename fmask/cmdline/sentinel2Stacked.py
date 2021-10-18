@@ -36,6 +36,7 @@ from fmask import config
 from fmask import fmaskerrors
 from fmask.cmdline import sentinel2makeAnglesImage
 from fmask import fmask
+from fmask import sen2meta
 
 # for GDAL command line utilities
 CMDLINECREATIONOPTIONS = []
@@ -135,7 +136,7 @@ def getCmdargs(argv=None):
     if cmdargs.output is None or multipleInputGiven or not inputGiven:
         parser.print_help()
         sys.exit(1)
-    
+
     return cmdargs
 
 
@@ -229,7 +230,7 @@ def makeStackAndAngles(cmdargs):
     
     for fn in resampledBands:
         os.remove(fn)
-    
+
     return resampledBands
 
 
@@ -288,6 +289,66 @@ def findGranuleXml(granuleDir):
     return xmlfile
 
 
+def readTopLevelMeta(cmdargs):
+    """
+    Since ESA introduced the radiometric offsets in version 04.00
+    of their processing, we now need to read the XML metadata from 
+    the top level of the SAFE directory. 
+
+    Return a sen2meta.Sen2ZipfileMeta object. 
+
+    """
+    safeDir = cmdargs.safedir
+    if safeDir is None:
+        safeDir = os.path.join(cmdargs.granuledir, os.pardir, os.pardir)
+        if not os.path.exists(os.path.join(safeDir, 'GRANULE')):
+            msg = "Cannot identify the SAFE-level directory, which is now required (since ESA version 04.00)"
+            raise fmaskerrors.FmaskFileError(msg)
+
+    # If we can find the top-level XML file, then we can check it for
+    # offset values. First look for the stndard named file
+    topLevelXML = os.path.join(safeDir, 'MTD_MSIL1C.xml')
+    if not os.path.exists(topLevelXML):
+        # We may have an old-format zip file, in which the XML is
+        # named for the date of acquisition. It should be the only 
+        # .xml file in that directory. 
+        topLevelXML = None
+        xmlList = glob.glob(os.path.join(safeDir, "*.xml"))
+        if len(xmlList) == 1:
+            topLevelXML = xmlList[0]
+    if topLevelXML is None:
+        msg = "Unable to find top-level XML file, which is now required"
+        raise fmaskerrors.FmaskFileError(msg)
+
+    topMeta = sen2meta.Sen2ZipfileMeta(xmlfilename=topLevelXML)
+    return topMeta
+
+
+def makeRefOffsetDict(topMeta):
+    """
+    Take the given sen2meta.Sen2ZipfileMeta object and convert it
+    into a dictionary suitable to give to FmaskConfig.setTOARefOffsetDict.
+
+    """
+    # This dictionary established a correspondance between the string
+    # given in sen2meta.nameFromBandId and the internal index values used 
+    # for bands within python-fmask. 
+    # Note that this should include every band used within the Fmask code, 
+    # although not necessarily every Sentinel-2 band. 
+    bandIndexNameDict = {config.BAND_BLUE: "B02", config.BAND_GREEN: "B03", 
+        config.BAND_RED: "B04", config.BAND_NIR: "B08", 
+        config.BAND_SWIR1: "B11", config.BAND_SWIR2: "B12", 
+        config.BAND_CIRRUS: "B10", config.BAND_S2CDI_NIR8A: "B08A", 
+        config.BAND_S2CDI_NIR7: "B07", config.BAND_WATERVAPOUR: "B09"}
+
+    offsetDict = {}
+    for bandNdx in bandIndexNameDict:
+        bandNameStr = bandIndexNameDict[bandNdx]
+        offsetVal = topMeta.offsetValDict[bandNameStr]
+        offsetDict[bandNdx] = offsetVal
+    return offsetDict
+
+
 def mainRoutine(argv=None):
     """
     Main routine that calls fmask
@@ -303,6 +364,7 @@ def mainRoutine(argv=None):
     if cmdargs.safedir is not None or cmdargs.granuledir is not None:
         tempStack = True
         resampledBands = makeStackAndAngles(cmdargs)
+    topMeta = readTopLevelMeta(cmdargs)
     
     anglesfile = checkAnglesFile(cmdargs.anglesfile, cmdargs.toa)
     anglesInfo = config.AnglesFileInfo(anglesfile, 3, anglesfile, 2, anglesfile, 1, anglesfile, 0)
@@ -316,7 +378,9 @@ def mainRoutine(argv=None):
     fmaskConfig.setKeepIntermediates(cmdargs.keepintermediates)
     fmaskConfig.setVerbose(cmdargs.verbose)
     fmaskConfig.setTempDir(cmdargs.tempdir)
-    fmaskConfig.setTOARefScaling(10000.0)
+    fmaskConfig.setTOARefScaling(topMeta.scaleVal)
+    offsetDict = makeRefOffsetDict(topMeta)
+    fmaskConfig.setTOARefOffsetDict(offsetDict)
     fmaskConfig.setMinCloudSize(cmdargs.mincloudsize)
     fmaskConfig.setEqn17CloudProbThresh(cmdargs.cloudprobthreshold / 100)    # Note conversion from percentage
     fmaskConfig.setEqn20NirSnowThresh(cmdargs.nirsnowthreshold)

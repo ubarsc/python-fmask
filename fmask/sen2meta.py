@@ -183,6 +183,55 @@ class Sen2TileMeta(object):
         (longitude, latitude, z) = tr.TransformPoint(ctrX, ctrY)
         return (longitude, latitude)
 
+
+# ESA use stoopid index numbers in the XML, known as bandId. This list turns
+# them into a band name. Note that these names will also sort into the 
+# same band order as their index numbers, because we have used 'B08A' 
+# instead of B8A. 
+nameFromBandId = ['B01', 'B02', 'B03', 'B04', 'B05', 'B06', 'B07', 'B08', 
+    'B08A', 'B09', 'B10', 'B11', 'B12']
+
+class Sen2ZipfileMeta(object):
+    """
+    Metadata from the top-level XML file. 
     
+    Only loading the few things we need from this file, most of it
+    is ignored. 
 
+    """
+    def __init__(self, xmlfilename=None):
+        xmlStr = open(xmlfilename).read()
+        root = ElementTree.fromstring(xmlStr)
+        nsPrefix = root.tag[:root.tag.index('}')+1]
+        nsDict = {'n1':nsPrefix[1:-1]}
 
+        generalInfoNode = root.find('n1:General_Info', nsDict)
+        prodImgCharactNode = generalInfoNode.find('Product_Image_Characteristics', nsDict)
+        scaleValNode = prodImgCharactNode.find('QUANTIFICATION_VALUE', nsDict)
+        self.scaleVal = float(scaleValNode.text)
+        # Plough through the bizarrely organised special values list
+        specialValuesList = prodImgCharactNode.findall('Special_Values', nsDict)
+        for node in specialValuesList:
+            nameNode = node.find('SPECIAL_VALUE_TEXT', nsDict)
+            valNode = node.find('SPECIAL_VALUE_INDEX', nsDict)
+            name = nameNode.text
+            val = int(valNode.text)
+            if name == "NODATA":
+                self.nodataVal = val
+            elif name == "SATURATED":
+                self.saturatedVal = val
+
+        self.offsetValDict = {}
+        offsetNodeList = generalInfoNode.findall('Product_Image_Characteristics/Radiometric_Offset_List/RADIO_ADD_OFFSET', nsDict)
+        if len(offsetNodeList) == 0:
+            for k in nameFromBandId:
+                self.offsetValDict[k] = 0
+        else:
+            for node in offsetNodeList:
+                bandId = int(node.attrib['band_id'])
+                bandName = nameFromBandId[bandId]
+                offsetVal = int(node.text)
+                self.offsetValDict[bandName] = offsetVal
+
+        baselineVersionNode = generalInfoNode.find('Product_Info/PROCESSING_BASELINE', nsDict)
+        self.baselineVersion = baselineVersionNode.text

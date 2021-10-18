@@ -128,10 +128,24 @@ def doFmask(fmaskFilenames, fmaskConfig):
     if fmaskConfig.anglesInfo is None:
         msg = 'Must provide Angles information via fmaskConfig.setAnglesInfo'
         raise fmaskerrors.FmaskParameterError(msg)
-        
+
     if fmaskFilenames.outputMask is None:
         msg = 'Output filename must be provided via fmaskFilenames parameter'
         raise fmaskerrors.FmaskParameterError(msg)
+
+    if ((fmaskConfig.sensor == config.FMASK_SENTINEL2) and 
+            (fmaskConfig.TOARefDNoffsetDict is None)):
+        msg = """
+            When using Fmask with Sentinel-2, it is now a requirement that
+            reflectance offsets be explicitly set. This is due to ESA's 
+            breaking changes in their processing version 04.00 (Nov 2021),
+            which added offsets to the imagery. 
+            See fmask.config.setTOARefOffsetDict() for more details. 
+            Also, sen2meta.Sen2ZipfileMeta can read the necessary XML file,
+            and fmask.cmdline.sentinel2Stacked.makeRefOffsetDict for further
+            sample code. 
+        """
+        raise fmaskerrors.Sen2MetaError(msg)
         
     if fmaskConfig.strictFmask:
         # change these values back to match the paper
@@ -302,7 +316,7 @@ def potentialCloudFirstPass(info, inputs, outputs, otherargs):
     """
     fmaskConfig = otherargs.fmaskConfig
 
-    ref = inputs.toaref.astype(numpy.float) / fmaskConfig.TOARefScaling
+    ref = refDNtoUnits(inputs.toaref, fmaskConfig)
     # Clamp off any reflectance <= 0
     ref[ref<=0] = 0.00001
 
@@ -470,6 +484,50 @@ def scoreatpcnt(counts, pcnt):
     return n
 
 
+def refDNtoUnits(refDN, fmaskConfig):
+    """
+    Convert the given reflectance pixel value array to physical units,
+    using parameters given in fmaskConfig. 
+
+    Scaling is ref = (dn+offset)/scaleVal
+
+    """
+    scaleVal = float(fmaskConfig.TOARefScaling)
+
+    bandNdxLookup = {}
+    for idNum in fmaskConfig.bands:
+        ndx = fmaskConfig.bands[idNum]
+        bandNdxLookup[ndx] = idNum
+
+    refUnits = numpy.zeros(refDN.shape, dtype=numpy.float32)
+    numBands = refDN.shape[0]
+    for bandNdx in range(numBands):
+        offset = 0
+        # Convert the band index number into the ID number
+        # we use as key for the offset dictionary
+        bandIdNum = None
+        if bandNdx in bandNdxLookup:
+            bandIdNum = bandNdxLookup[bandNdx]
+
+        if bandIdNum is not None and fmaskConfig.TOARefDNoffsetDict is not None:
+            offset = fmaskConfig.TOARefDNoffsetDict[bandIdNum]
+
+        refUnits[bandNdx] = singleRefDNtoUnits(refDN[bandNdx], scaleVal, offset)
+    return refUnits
+
+
+def singleRefDNtoUnits(refDN, scaleVal, offset):
+    """
+    Apply the given scale and offset to transform a single band
+    of reflectance from digital number (DN) to reflectance units.
+
+    Calculation is
+        ref = (refDN + offset) / scaleVal
+    """
+    ref = (numpy.float32(refDN) + offset) / scaleVal
+    return ref
+
+
 def calcBTthresholds(otherargs):
     """
     Calculate some global thresholds based on the results of the first pass
@@ -546,7 +604,7 @@ def potentialCloudSecondPass(info, inputs, outputs, otherargs):
     """
     fmaskConfig = otherargs.fmaskConfig
     
-    ref = inputs.toaref.astype(numpy.float) / fmaskConfig.TOARefScaling
+    ref = refDNtoUnits(inputs.toaref, fmaskConfig)
     # Clamp off any reflectance <= 0
     ref[ref<=0] = 0.00001
     
@@ -720,12 +778,18 @@ def doPotentialShadows(fmaskFilenames, fmaskConfig, NIR_17):
         nullval = 0
     # Sentinel2 is uint16 which causes problems...
     scaledNIR = band.ReadAsArray().astype(numpy.int16)
-    NIR_17_dn = NIR_17 * fmaskConfig.TOARefScaling
+    # Check for ESA's stoopid offset, for NIR band only
+    NIRoffset = 0
+    if (fmaskConfig.TOARefDNoffsetDict is not None and 
+            config.BAND_NIR in fmaskConfig.TOARefDNoffsetDict):
+        NIRoffset = fmaskConfig.TOARefDNoffsetDict[config.BAND_NIR]
+    scaleVal = fmaskConfig.TOARefScaling
+    NIR_17_dn = NIR_17 * scaleVal - NIRoffset
     
     scaledNIR_filled = fillminima.fillMinima(scaledNIR, nullval, NIR_17_dn)
 
-    NIR = scaledNIR.astype(numpy.float) / fmaskConfig.TOARefScaling
-    NIR_filled = scaledNIR_filled.astype(numpy.float) / fmaskConfig.TOARefScaling
+    NIR = singleRefDNtoUnits(scaledNIR, scaleVal, NIRoffset)
+    NIR_filled = singleRefDNtoUnits(scaledNIR_filled, scaleVal, NIRoffset)
     del scaledNIR, scaledNIR_filled
     
     # Equation 19
