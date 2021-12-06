@@ -313,7 +313,7 @@ def readTopLevelMeta(cmdargs):
         # named for the date of acquisition. It should be the only 
         # .xml file in that directory. 
         topLevelXML = None
-        xmlList = glob.glob(os.path.join(safeDir, "*.xml"))
+        xmlList = [f for f in glob.glob(os.path.join(safeDir, "*.xml")) if "INSPIRE.xml" not in f]
         if len(xmlList) == 1:
             topLevelXML = xmlList[0]
     if topLevelXML is None:
