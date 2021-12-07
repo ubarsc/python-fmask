@@ -26,7 +26,7 @@ try:
     from numpy.distutils.core import setup, Extension
     withExtensions = True
 except ImportError:
-    from distutils.core import setup
+    from setuptools import setup
     withExtensions = False
 
 # Are we installing the command line scripts?
