@@ -26,7 +26,7 @@ try:
     from numpy.distutils.core import setup, Extension
     withExtensions = True
 except ImportError:
-    from setuptools import setup
+    from numpy.distutils.core import setup
     withExtensions = False
 
 # Are we installing the command line scripts?
@@ -48,7 +48,6 @@ if withExtensions:
     extensionsList = [fillminimaC, valueIndexesC]
 else:
     # This would be for a ReadTheDocs build. 
-    from distutils.core import setup
     extensionsList = []
 
 if NO_INSTALL_CMDLINE:
