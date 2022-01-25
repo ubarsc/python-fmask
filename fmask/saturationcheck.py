@@ -26,6 +26,7 @@ import numpy
 from rios import applier, cuiprogress
 from . import config
 
+
 def makeSaturationMask(fmaskConfig, radiancefile, outMask):
     """
     Checks the radianceFile and creates a mask with
@@ -61,7 +62,8 @@ def makeSaturationMask(fmaskConfig, radiancefile, outMask):
     
     applier.apply(riosSaturationMask, inputs, outputs, 
                 otherargs, controls=controls)
-    
+
+
 def riosSaturationMask(info, inputs, outputs, otherargs):
     """
     Called from RIOS. Does the actual saturation test. Currently assumes that
