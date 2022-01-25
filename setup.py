@@ -16,7 +16,6 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import os
-import sys
 import glob
 import fmask
 
@@ -56,24 +55,24 @@ else:
     scriptList = glob.glob("bin/*.py")
     
 # do the setup
-setup( name = 'python-fmask',
-        version = fmask.__version__,
-        description = 'Module to implement the fmask cloud masking algorithm (Zhu, Wang & Woodcock 2015)',
-        author = 'Neil Flood',
-        author_email = 'neil.flood@des.qld.gov.au',
-        scripts = scriptList,
-        packages = ['fmask', 'fmask/cmdline'],
-        ext_package = 'fmask',
-        ext_modules = extensionsList,
-        license='LICENSE.txt',
-        data_files=[('', ['LICENSE.txt'])], # add this to tarball
-        url='https://www.pythonfmask.org/',
-        classifiers=['Intended Audience :: Developers',
-          'Operating System :: OS Independent',
-          'Programming Language :: Python :: 2',
-          'Programming Language :: Python :: 2.7',
-          'Programming Language :: Python :: 3',
-          'Programming Language :: Python :: 3.4',
-          'Programming Language :: Python :: 3.5',
-          'Programming Language :: Python :: 3.6'])
+setup(name='python-fmask',
+    version=fmask.__version__,
+    description='Module to implement the fmask cloud masking algorithm (Zhu, Wang & Woodcock 2015)',
+    author='Neil Flood',
+    author_email='neil.flood@des.qld.gov.au',
+    scripts=scriptList,
+    packages=['fmask', 'fmask/cmdline'],
+    ext_package='fmask',
+    ext_modules=extensionsList,
+    license='LICENSE.txt',
+    data_files=[('', ['LICENSE.txt'])],  # add this to tarball
+    url='https://www.pythonfmask.org/',
+    classifiers=['Intended Audience :: Developers',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6'])
           
