@@ -23,12 +23,18 @@ import numpy
 if os.getenv('READTHEDOCS', default='False') != 'True':
     from . import _valueindexes
 
+
 class ValueIndexesError(Exception):
     pass
+
+
 class NonIntTypeError(ValueIndexesError):
     pass
+
+
 class RangeError(ValueIndexesError):
     pass
+
 
 class ValueIndexes(object):
     """
@@ -107,8 +113,8 @@ class ValueIndexes(object):
         # Get counts of all values in a
         minval = a.min()
         maxval = a.max()
-        (counts, binEdges) = numpy.histogram(a, range=(minval, maxval+1), 
-            bins=(maxval-minval+1))
+        (counts, binEdges) = numpy.histogram(a, range=(minval, maxval + 1), 
+            bins=(maxval - minval + 1))
             
         # Mask counts for any requested null values. 
         maskedCounts = counts.copy()
