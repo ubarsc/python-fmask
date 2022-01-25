@@ -68,6 +68,7 @@ from osgeo import osr
 from rios import applier
 from rios import fileinfo
 
+
 def findImgCorners(img, imgInfo):
     """
     Find the corners of the data within the given template image
@@ -206,7 +207,7 @@ def localRadius(latitude):
     a = osr.SRS_WGS84_SEMIMAJOR
     invFlat = osr.SRS_WGS84_INVFLATTENING
     f = 1 / invFlat
-    eSqd = 2*f - f**2
+    eSqd = 2 * f - f**2
 
     # Radius of curvature
     R = a / numpy.sqrt(1 - eSqd * numpy.sin(latRadians)**2)
@@ -249,7 +250,6 @@ def sunAnglesForExtent(imgInfo, mtlInfo):
 
     (sunAz, sunZen) = sunAnglesForPoints(latDeg, longDeg, hourGMT, jdp)
 
-
     sunAngles = numpy.vstack((sunAz, sunZen)).T
     return sunAngles
 
@@ -276,14 +276,15 @@ def sunAnglesForPoints(latDeg, longDeg, hourGMT, jdp):
     a = numpy.array([0.000075, 0.001868, 0.032077, 0.014615, 0.040849])
     meanSolarTime = hourGMT + longDeg / 15.0
     localSolarDiff = (a[0] + a[1] * numpy.cos(jdpr) - a[2] * numpy.sin(jdpr) -
-        a[3] * numpy.cos(2*jdpr) - a[4] * numpy.sin(2*jdpr)) * 12 * 60 / numpy.pi
+        a[3] * numpy.cos(2 * jdpr) - a[4] * numpy.sin(2 * jdpr)) * 12 * 60 / numpy.pi
     trueSolarTime = meanSolarTime + localSolarDiff / 60 - 12.0
     # Hour as an angle
     ah = trueSolarTime * numpy.radians(15)
 
     b = numpy.array([0.006918, 0.399912, 0.070257, 0.006758, 0.000907, 0.002697, 0.001480])
-    delta = (b[0] - b[1]*numpy.cos(jdpr) + b[2]*numpy.sin(jdpr) - b[3]*numpy.cos(2.*jdpr) +
-        b[4]*numpy.sin(2.*jdpr) - b[5]*numpy.cos(3.*jdpr) + b[6]*numpy.sin(3.*jdpr))
+    delta = (b[0] - b[1] * numpy.cos(jdpr) + b[2] * numpy.sin(jdpr) - 
+        b[3] * numpy.cos(2. * jdpr) + b[4] * numpy.sin(2. * jdpr) - 
+        b[5] * numpy.cos(3. * jdpr) + b[6] * numpy.sin(3. * jdpr))
 
     cosSunZen = (numpy.sin(latRad) * numpy.sin(delta) +
         numpy.cos(latRad) * numpy.cos(delta) * numpy.cos(ah))
@@ -315,7 +316,7 @@ def makeAnglesImage(templateimg, outfile, nadirLine, extentSunAngles, satAzimuth
     pixel in the template image.
 
     """
-    imgInfo  = fileinfo.ImageInfo(templateimg)
+    imgInfo = fileinfo.ImageInfo(templateimg)
 
     infiles = applier.FilenameAssociations()
     outfiles = applier.FilenameAssociations()
@@ -393,7 +394,7 @@ def bilinearInterp(xMin, xMax, yMin, yMax, cornerVals, x, y):
     (tl, tr, bl, br) = cornerVals
 
     # Calculate the interpolated values
-    vals = tr * p * q + tl * p * (1-q) + br * (1-p) * q + bl * (1-p) * (1-q)
+    vals = tr * p * q + tl * p * (1 - q) + br * (1 - p) * q + bl * (1 - p) * (1 - q)
     return vals
 
 
