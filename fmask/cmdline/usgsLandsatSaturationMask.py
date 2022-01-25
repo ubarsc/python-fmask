@@ -21,6 +21,7 @@ import argparse
 from fmask import saturationcheck
 from fmask import config
 
+
 def getCmdargs():
     """
     Get command line arguments

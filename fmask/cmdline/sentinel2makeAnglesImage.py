@@ -41,7 +41,6 @@ import argparse
 
 import numpy
 from osgeo import gdal
-gdal.UseExceptions()
 from osgeo import osr
 
 from rios import applier
@@ -49,6 +48,8 @@ from rios import calcstats
 from rios import cuiprogress
 
 from fmask import sen2meta
+
+gdal.UseExceptions()
 
 # This scale value will convert between DN and radians in output image file, 
 #    radians = dn * SCALE_TO_RADIANS
@@ -115,7 +116,7 @@ def makeAngles(infile, outfile):
     
     lnames = ['SatelliteAzimuth', 'SatelliteZenith', 'SunAzimuth', 'SunZenith']
     for i in range(ds.RasterCount):
-        b = ds.GetRasterBand(i+1)
+        b = ds.GetRasterBand(i + 1)
         b.WriteArray(stackDN[i])
         b.SetNoDataValue(nullValDN)
         b.SetDescription(lnames[i])

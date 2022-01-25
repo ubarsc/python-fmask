@@ -30,11 +30,12 @@ represent potential shadow objects.
 
 import os
 import numpy
-from scipy.ndimage import grey_erosion, grey_dilation, minimum_filter
+from scipy.ndimage import grey_dilation
 
 # Fail slightly less drastically when running from ReadTheDocs
 if os.getenv('READTHEDOCS', default='False') != 'True':
     from . import _fillminima
+
 
 def fillMinima(img, nullval, boundaryval):
     """

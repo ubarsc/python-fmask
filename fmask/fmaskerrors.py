@@ -22,18 +22,23 @@ Exceptions used within fmask
 
 class FmaskException(Exception):
     "An exception rasied by Fmask"
-    
+
+
 class FmaskParameterError(FmaskException):
     "Something is wrong with a parameter"
-    
+
+
 class FmaskFileError(FmaskException):
     "Data in file is incorrect"
+
 
 class FmaskNotSupportedError(FmaskException):
     "Requested operation is not supported"
 
+
 class FmaskInstallationError(FmaskException):
     "Problem with installation of Fmask or a required package"
-    
+
+
 class Sen2MetaError(Exception):
     "Error with Sentinel-2 metadata"

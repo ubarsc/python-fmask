@@ -21,13 +21,12 @@ values from USGS to Top of Atmosphere (TOA) reflectance (\*1000).
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 from __future__ import print_function, division
 
-import sys
 import numpy
 from osgeo import gdal
-gdal.UseExceptions()
 from rios import applier, cuiprogress, fileinfo
-from . import fmask
 from . import config
+
+gdal.UseExceptions()
 
 # Derived by Pete Bunting from 6S
 LANDSAT8_ESUN = [1876.61, 1970.03, 1848.9, 1571.3, 967.66, 245.73, 82.03, 361.72]
@@ -38,10 +37,10 @@ LANDSAT4_ESUN = [1983.0, 1795.0, 1539.0, 1028.0, 219.8, 83.49]
 LANDSAT5_ESUN = [1983.0, 1796.0, 1536.0, 1031.0, 220.0, 83.44]
 LANDSAT7_ESUN = [1997.0, 1812.0, 1533.0, 1039.0, 230.8, 84.90]
 
-ESUN_LOOKUP = {'LANDSAT_4' : LANDSAT4_ESUN,
-            'LANDSAT_5' : LANDSAT5_ESUN,
-            'LANDSAT_7' : LANDSAT7_ESUN,
-            'LANDSAT_8' : LANDSAT8_ESUN}
+ESUN_LOOKUP = {'LANDSAT_4': LANDSAT4_ESUN,
+            'LANDSAT_5': LANDSAT5_ESUN,
+            'LANDSAT_7': LANDSAT7_ESUN,
+            'LANDSAT_8': LANDSAT8_ESUN}
 
 RADIANCE_MULT = 'RADIANCE_MULT_BAND_%d'
 RADIANCE_ADD = 'RADIANCE_ADD_BAND_%d'
@@ -53,11 +52,12 @@ QCALMIN_KEY = 'QCALMIN_BAND%d'
 
 
 # band numbers in mtl file for gain and offset for reflective
-BAND_NUM_DICT = {'LANDSAT_4' : (1, 2, 3, 4, 5, 7), 
-    'LANDSAT_5' : (1, 2, 3, 4, 5, 7),
-    'LANDSAT_7' : (1, 2, 3, 4, 5, 7),
-    'LANDSAT_8' : (1, 2, 3, 4, 5, 6, 7, 9)}
-                                
+BAND_NUM_DICT = {'LANDSAT_4': (1, 2, 3, 4, 5, 7), 
+    'LANDSAT_5': (1, 2, 3, 4, 5, 7),
+    'LANDSAT_7': (1, 2, 3, 4, 5, 7),
+    'LANDSAT_8': (1, 2, 3, 4, 5, 6, 7, 9)}
+
+
 def readGainsOffsets(mtlInfo):
     """
     Read the gains and offsets out of the .MTL file
@@ -94,6 +94,7 @@ def readGainsOffsets(mtlInfo):
                                         
     return gains, offsets
 
+
 def earthSunDistance(date):
     """
     Given a date in YYYYMMDD will compute the earth sun distance in astronomical units
@@ -103,11 +104,12 @@ def earthSunDistance(date):
     month = int(date[4:6])
     day = int(date[6:])
     d1 = datetime.datetime(year, month, day)
-    d2 = datetime.datetime(year, 1, 1) # first day of year
-    deltaT = d1-d2
-    jday = deltaT.days + 1 # julian day of year.
-    ds = (1.0 - 0.01673*numpy.cos(0.9856*(jday-4)*numpy.pi/180.0))
+    d2 = datetime.datetime(year, 1, 1)  # first day of year
+    deltaT = d1 - d2
+    jday = deltaT.days + 1  # julian day of year.
+    ds = (1.0 - 0.01673 * numpy.cos(0.9856 * (jday - 4) * numpy.pi / 180.0))
     return ds
+
 
 def riosTOA(info, inputs, outputs, otherinputs):
     """
@@ -197,11 +199,4 @@ def makeTOAReflectance(infile, mtlFile, anglesfile, outfile):
     # Explicitly set the null value in the output
     ds = gdal.Open(outfile, gdal.GA_Update)
     for i in range(ds.RasterCount):
-        ds.GetRasterBand(i+1).SetNoDataValue(otherinputs.outNull)
-
-if __name__ == '__main__':
-
-    cmds = CmdArgs()
-
-    makeTOAReflectance(cmds.infile, cmds.mtl, cmds.output)
-
+        ds.GetRasterBand(i + 1).SetNoDataValue(otherinputs.outNull)

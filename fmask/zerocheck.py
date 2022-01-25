@@ -26,6 +26,7 @@ from __future__ import print_function, division
 from rios import applier
 from rios import fileinfo
 
+
 def isBandAllZeroes(filename, band=0):
     """
     Checks the specified band within a file to see if it is all zeroes.
