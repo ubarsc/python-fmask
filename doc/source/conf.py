@@ -17,6 +17,7 @@ import sys
 import os
 import fmask # for version info
 
+
 # Set up 'mock' modules, needed to build docs if numpy, gdal etc., aren't installed
 import mock
 import importlib
