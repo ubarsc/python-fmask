@@ -23,7 +23,6 @@ from __future__ import print_function, division
 import sys
 import os
 import argparse
-import numpy
 import tempfile
 import glob
 import subprocess
@@ -153,7 +152,6 @@ def checkAnglesFile(inputAnglesFile, toafile):
     toaImgInfo = fileinfo.ImageInfo(toafile)
     anglesImgInfo = fileinfo.ImageInfo(inputAnglesFile)
 
-    
     outputAnglesFile = inputAnglesFile
     if (toaImgInfo.xRes != anglesImgInfo.xRes) or (toaImgInfo.yRes != anglesImgInfo.yRes):
         (fd, vrtName) = tempfile.mkstemp(prefix='angles', suffix='.vrt')
@@ -211,8 +209,8 @@ def makeStackAndAngles(cmdargs):
         # Now make a resampled copy to the desired pixel size, using the right resample method
         resampleMethod = chooseResampleMethod(cmdargs.pixsize, inBandImg)
         subprocess.check_call([GDALWARPCMD, '-q', '-tr', str(cmdargs.pixsize),
-                str(cmdargs.pixsize), '-co', 'TILED=YES', '-of', 'VRT', '-r',
-                resampleMethod, inBandImg, tmpBand])
+            str(cmdargs.pixsize), '-co', 'TILED=YES', '-of', 'VRT', '-r',
+            resampleMethod, inBandImg, tmpBand])
         
         resampledBands.append(tmpBand)
     
@@ -363,7 +361,7 @@ def mainRoutine(argv=None):
     tempStack = False
     if cmdargs.safedir is not None or cmdargs.granuledir is not None:
         tempStack = True
-        resampledBands = makeStackAndAngles(cmdargs)
+        makeStackAndAngles(cmdargs)
     topMeta = readTopLevelMeta(cmdargs)
     
     anglesfile = checkAnglesFile(cmdargs.anglesfile, cmdargs.toa)
