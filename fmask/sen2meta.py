@@ -31,6 +31,7 @@ from osgeo import osr
 
 from . import fmaskerrors
 
+
 class Sen2TileMeta(object):
     """
     Metadata for a single 100km tile
@@ -44,8 +45,8 @@ class Sen2TileMeta(object):
         
         root = ElementTree.fromstring(f.read())
         # Stoopid XML namespace prefix
-        nsPrefix = root.tag[:root.tag.index('}')+1]
-        nsDict = {'n1':nsPrefix[1:-1]}
+        nsPrefix = root.tag[:root.tag.index('}') + 1]
+        nsDict = {'n1': nsPrefix[1:-1]}
         
         generalInfoNode = root.find('n1:General_Info', nsDict)
         # N.B. I am still not entirely convinced that this SENSING_TIME is really 
@@ -191,6 +192,7 @@ class Sen2TileMeta(object):
 nameFromBandId = ['B01', 'B02', 'B03', 'B04', 'B05', 'B06', 'B07', 'B08', 
     'B08A', 'B09', 'B10', 'B11', 'B12']
 
+
 class Sen2ZipfileMeta(object):
     """
     Metadata from the top-level XML file. 
@@ -202,8 +204,8 @@ class Sen2ZipfileMeta(object):
     def __init__(self, xmlfilename=None):
         xmlStr = open(xmlfilename).read()
         root = ElementTree.fromstring(xmlStr)
-        nsPrefix = root.tag[:root.tag.index('}')+1]
-        nsDict = {'n1':nsPrefix[1:-1]}
+        nsPrefix = root.tag[:root.tag.index('}') + 1]
+        nsDict = {'n1': nsPrefix[1:-1]}
 
         generalInfoNode = root.find('n1:General_Info', nsDict)
         prodImgCharactNode = generalInfoNode.find('Product_Image_Characteristics', nsDict)
