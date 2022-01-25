@@ -20,6 +20,7 @@ import sys
 import argparse
 from fmask import landsatTOA
 
+
 def getCmdargs():
     """
     Get command line arguments
