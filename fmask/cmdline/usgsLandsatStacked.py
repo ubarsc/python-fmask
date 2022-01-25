@@ -43,6 +43,7 @@ if DEFAULTDRIVERNAME in dfltDriverOptions:
         CMDLINECREATIONOPTIONS.append('-co')
         CMDLINECREATIONOPTIONS.append(opt)
 
+
 def getCmdargs():
     """
     Get command line arguments
@@ -96,6 +97,7 @@ def getCmdargs():
     cmdargs = parser.parse_args()
 
     return cmdargs
+
 
 def makeStacksAndAngles(cmdargs):
     """
@@ -194,7 +196,8 @@ def makeStacksAndAngles(cmdargs):
     os.close(fd)
     landsatTOA.makeTOAReflectance(tmpRefStack, cmdargs.mtl, anglesfile, toafile)
     cmdargs.toa = toafile
-            
+
+
 def mainRoutine():
     """
     Main routine that calls fmask
@@ -206,8 +209,8 @@ def mainRoutine():
         makeStacksAndAngles(cmdargs)
 
     if (cmdargs.thermal is None or cmdargs.anglesfile is None or 
-            cmdargs.mtl is None is None or cmdargs.output is None
-            or cmdargs.toa is None):
+            cmdargs.mtl is None is None or cmdargs.output is None or
+            cmdargs.toa is None):
         raise SystemExit('Not all required input parameters supplied')
     
     # 1040nm thermal band should always be the first (or only) band in a
