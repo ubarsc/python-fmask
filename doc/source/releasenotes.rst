@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Versino 0.5.7 (2022-02-11)
+Version 0.5.7 (2022-02-11)
 --------------------------
 
 Enhancements
