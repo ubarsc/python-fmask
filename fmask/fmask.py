@@ -291,7 +291,7 @@ def doPotentialCloudFirstPass(fmaskFilenames, fmaskConfig, missingThermal):
         nullBandNdx = [config.BAND_BLUE, config.BAND_GREEN, config.BAND_RED, config.BAND_NIR, 
             config.BAND_SWIR1, config.BAND_SWIR2]
 
-    elif fmaskConfig.sensor == config.FMASK_LANDSAT8:
+    elif fmaskConfig.sensor in (config.FMASK_LANDSAT8, config.FMASK_LANDSATOLI):
         nullBandNdx = [config.BAND_BLUE, config.BAND_GREEN, config.BAND_RED, config.BAND_NIR, 
             config.BAND_SWIR1, config.BAND_SWIR2, config.BAND_CIRRUS]
 

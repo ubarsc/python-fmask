@@ -60,8 +60,8 @@ def makeSaturationMask(mtlfile, infile, outfile):
         sensor = config.FMASK_LANDSAT47
     elif landsat == '7':
         sensor = config.FMASK_LANDSAT47
-    elif landsat == '8':
-        sensor = config.FMASK_LANDSAT8
+    elif landsat in ('8', '9'):
+        sensor = config.FMASK_LANDSATOLI
     else:
         raise SystemExit('Unsupported Landsat sensor')
 

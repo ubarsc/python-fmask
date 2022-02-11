@@ -130,7 +130,7 @@ def makeStacksAndAngles(cmdargs):
     elif landsat == '7':
         refWildcard = 'L*_B[1,2,3,4,5,7].TIF'
         thermalWildcard = 'L*_B6_VCID_?.TIF'
-    elif landsat == '8':
+    elif landsat in ('8', '9'):
         refWildcard = 'LC*_B[1-7,9].TIF'
         thermalWildcard = 'LC*_B1[0,1].TIF'
     else:
@@ -229,8 +229,8 @@ def mainRoutine():
         sensor = config.FMASK_LANDSAT47
     elif landsat == '7':
         sensor = config.FMASK_LANDSAT47
-    elif landsat == '8':
-        sensor = config.FMASK_LANDSAT8
+    elif landsat in ('8', '9'):
+        sensor = config.FMASK_LANDSATOLI
     else:
         raise SystemExit('Unsupported Landsat sensor')
         

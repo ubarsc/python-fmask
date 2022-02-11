@@ -36,6 +36,8 @@ FMASK_LANDSAT8 = 1
 "Landsat 8"
 FMASK_SENTINEL2 = 2
 "Sentinel 2"
+FMASK_LANDSATOLI = 3
+"Landsat OLI"
 
 """
 Some constants for the various reflective bands used in fmask.
@@ -121,7 +123,7 @@ class FmaskConfig(object):
         if sensor == FMASK_LANDSAT47:
             self.bands = {BAND_BLUE: 0, BAND_GREEN: 1, BAND_RED: 2, BAND_NIR: 3,
                 BAND_SWIR1: 4, BAND_SWIR2: 5}
-        elif sensor == FMASK_LANDSAT8:
+        elif sensor in (FMASK_LANDSAT8, FMASK_LANDSATOLI):
             self.bands = {BAND_BLUE: 1, BAND_GREEN: 2, BAND_RED: 3, BAND_NIR: 4,
                 BAND_SWIR1: 5, BAND_SWIR2: 6, BAND_CIRRUS: 7}
         elif sensor == FMASK_SENTINEL2:
@@ -535,7 +537,8 @@ LANDSAT_QCALMIN_KEY = 'QCALMIN_BAND%s'
 LANDSAT_TH_BAND_NUM_DICT = {'LANDSAT_4': '6', 
         'LANDSAT_5': '6',
         'LANDSAT_7': '6_VCID_1',
-        'LANDSAT_8': '10'}
+        'LANDSAT_8': '10',
+        'LANDSAT_9': '10'}
                         
 
 # for some reason L4, 5, and 7 don't
