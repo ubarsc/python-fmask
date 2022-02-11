@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Versino 0.5.7 (2022-02-11)
+--------------------------
+
+Enhancements
+    * Minor changes to support Landsat-9 from USGS
+
 Version 0.5.6 (2021-10-19)
 --------------------------
 
