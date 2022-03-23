@@ -296,24 +296,35 @@ def readTopLevelMeta(cmdargs):
     Return a sen2meta.Sen2ZipfileMeta object. 
 
     """
-    safeDir = cmdargs.safedir
-    if safeDir is None:
-        safeDir = os.path.join(cmdargs.granuledir, os.pardir, os.pardir)
-        if not os.path.exists(os.path.join(safeDir, 'GRANULE')):
-            msg = "Cannot identify the SAFE-level directory, which is now required (since ESA version 04.00)"
-            raise fmaskerrors.FmaskFileError(msg)
+    topLevelXML = None
 
-    # If we can find the top-level XML file, then we can check it for
-    # offset values. First look for the stndard named file
-    topLevelXML = os.path.join(safeDir, 'MTD_MSIL1C.xml')
-    if not os.path.exists(topLevelXML):
-        # We may have an old-format zip file, in which the XML is
-        # named for the date of acquisition. It should be the only 
-        # .xml file in that directory. 
-        topLevelXML = None
-        xmlList = [f for f in glob.glob(os.path.join(safeDir, "*.xml")) if "INSPIRE.xml" not in f]
-        if len(xmlList) == 1:
-            topLevelXML = xmlList[0]
+    # If safedir and granuledir are both empty, then user must pass TOA with XML path
+    if cmdargs.safedir is None and cmdargs.granuledir is None:
+        from osgeo import gdal
+        ds = gdal.Open(cmdargs.toa)
+
+        # Assume user use gdal_edit.py to pass topLevelXML path to TOA file
+        # E.g. gdal_edit.py -ro -mo topLevelXML=MTD_MSIL1C.xml toa.vrt.
+        if "topLevelXML" in ds.GetMetadata():
+            topLevelXML = ds.GetMetadata()["topLevelXML"]
+    else:
+        safeDir = cmdargs.safedir
+        if safeDir is None:
+            safeDir = os.path.join(cmdargs.granuledir, os.pardir, os.pardir)
+            if not os.path.exists(os.path.join(safeDir, 'GRANULE')):
+                msg = "Cannot identify the SAFE-level directory, which is now required (since ESA version 04.00)"
+                raise fmaskerrors.FmaskFileError(msg)
+
+        # If we can find the top-level XML file, then we can check it for
+        # offset values. First look for the stndard named file
+        topLevelXML = os.path.join(safeDir, 'MTD_MSIL1C.xml')
+        if not os.path.exists(topLevelXML):
+            # We may have an old-format zip file, in which the XML is
+            # named for the date of acquisition. It should be the only 
+            # .xml file in that directory. 
+            xmlList = [f for f in glob.glob(os.path.join(safeDir, "*.xml")) if "INSPIRE.xml" not in f]
+            if len(xmlList) == 1:
+                topLevelXML = xmlList[0]
     if topLevelXML is None:
         msg = "Unable to find top-level XML file, which is now required"
         raise fmaskerrors.FmaskFileError(msg)
