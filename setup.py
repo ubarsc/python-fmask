@@ -19,13 +19,12 @@ import os
 import glob
 import fmask
 
-# If we fail to import the numpy version of setup(), still try to proceed, as it is possibly
-# because we are being run by ReadTheDocs, and so we just need to be able to generate documentation. 
+from setuptools import setup, Extension
+
 try:
-    from numpy.distutils.core import setup, Extension
+    from numpy import get_include as numpy_get_include
     withExtensions = True
 except ImportError:
-    from numpy.distutils.core import setup
     withExtensions = False
 
 # Are we installing the command line scripts?
@@ -40,10 +39,12 @@ if withExtensions:
     # This is for a normal build
     fillminimaC = Extension(name='_fillminima', 
                 define_macros=[NUMPY_MACROS],
-                sources=['src/fillminima.c'])
+                sources=['src/fillminima.c'],
+                include_dirs=[numpy_get_include()])
     valueIndexesC = Extension(name='_valueindexes',
                 define_macros=[NUMPY_MACROS],
-                sources=['src/valueindexes.c'])
+                sources=['src/valueindexes.c'],
+                include_dirs=[numpy_get_include()])
     extensionsList = [fillminimaC, valueIndexesC]
 else:
     # This would be for a ReadTheDocs build. 
