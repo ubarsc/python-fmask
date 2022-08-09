@@ -37,14 +37,14 @@ NUMPY_MACROS = ('NPY_NO_DEPRECATED_API', 'NPY_1_7_API_VERSION')
 
 if withExtensions:
     # This is for a normal build
-    fillminimaC = Extension(name='_fillminima', 
-                define_macros=[NUMPY_MACROS],
-                sources=['src/fillminima.c'],
-                include_dirs=[numpy_get_include()])
+    fillminimaC = Extension(name='_fillminima',
+        define_macros=[NUMPY_MACROS],
+        sources=['src/fillminima.c'],
+        include_dirs=[numpy_get_include()])
     valueIndexesC = Extension(name='_valueindexes',
-                define_macros=[NUMPY_MACROS],
-                sources=['src/valueindexes.c'],
-                include_dirs=[numpy_get_include()])
+        define_macros=[NUMPY_MACROS],
+        sources=['src/valueindexes.c'],
+        include_dirs=[numpy_get_include()])
     extensionsList = [fillminimaC, valueIndexesC]
 else:
     # This would be for a ReadTheDocs build. 
