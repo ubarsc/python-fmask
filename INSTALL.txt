@@ -5,22 +5,22 @@ First unpack the bundle. For the tar.gz file, this would be
 For the zip file this would be
     unzip -q python-fmask-0.4.2.zip
 
-The installation uses Python's distutils packaging, so the following commands are fairly standard. 
+The installation uses setuptools packaging. This is best driven by pip
+(direct use of setup.py is now deprecated by the setuptools people), so 
+the following commands are fairly standard. 
 
 Build the code
     cd python-fmask-0.4.2
-    python setup.py build
+    pip install .
 
-
-If all goes well with that, then install. To install in default locations, just use
-    python setup.py install
 
 If you wish to install in a non-default location, use
-    python setup.py install --prefix=/yourChosenDirectory
+    pip install . --prefix=/yourChosenDirectory
 
-If installed in a non-default location, you will then need to ensure that the right environment
-variables are set. For simple bash syntax, this would be something like:
+If installed in a non-default location, you will then need to ensure that the 
+right environment variables are set. For simple bash syntax, this would be 
+something like:
     export PATH="/yourChosenDirectory/bin:$PATH"
-    export PYTHONPATH="/yourChosenDirectory/lib/python2.7/site-packages:$PATH"
+    export PYTHONPATH="/yourChosenDirectory/lib/pythonX.X/site-packages:$PYTHONPATH"
 
-Note that the python2.7 sub-directory needs to match your version of python. 
+Note that the pythonX.X sub-directory needs to match your version of python. 
