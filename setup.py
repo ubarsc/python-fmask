@@ -27,11 +27,6 @@ try:
 except ImportError:
     withExtensions = False
 
-# Are we installing the command line scripts?
-# this is an experimental option for users who are
-# using the Python entry point feature of setuptools and Conda instead
-NO_INSTALL_CMDLINE = int(os.getenv('FMASK_NOCMDLINE', '0')) > 0
-
 # use the latest numpy API
 NUMPY_MACROS = ('NPY_NO_DEPRECATED_API', 'NPY_1_7_API_VERSION')
 
@@ -50,30 +45,35 @@ else:
     # This would be for a ReadTheDocs build. 
     extensionsList = []
 
-if NO_INSTALL_CMDLINE:
-    scriptList = None
-else:
-    scriptList = glob.glob("bin/*.py")
-    
 # do the setup
 setup(name='python-fmask',
     version=fmask.__version__,
     description='Module to implement the fmask cloud masking algorithm (Zhu, Wang & Woodcock 2015)',
     author='Neil Flood',
     author_email='neil.flood@des.qld.gov.au',
-    scripts=scriptList,
+    entry_points={
+        'console_scripts': [
+            'fmask_sentinel2makeAnglesImage.py = fmask.cmdline.sentinel2makeAnglesImage:mainRoutine',
+            'fmask_sentinel2Stacked.py = fmask.cmdline.sentinel2Stacked:mainRoutine',
+            'fmask_usgsLandsatMakeAnglesImage.py = fmask.cmdline.usgsLandsatMakeAnglesImage:mainRoutine',
+            'fmask_usgsLandsatSaturationMask.py = fmask.cmdline.usgsLandsatSaturationMask:mainRoutine',
+            'fmask_usgsLandsatStacked.py = fmask.cmdline.usgsLandsatStacked:mainRoutine',
+            'fmask_usgsLandsatTOA.py = fmask.cmdline.usgsLandsatTOA:mainRoutine'
+        ]
+    },
     packages=['fmask', 'fmask/cmdline'],
     ext_package='fmask',
     ext_modules=extensionsList,
     license='LICENSE.txt',
-    data_files=[('', ['LICENSE.txt'])],  # add this to tarball
     url='https://www.pythonfmask.org/',
     classifiers=['Intended Audience :: Developers',
         'Operating System :: OS Independent',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6'])
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10'])
           
