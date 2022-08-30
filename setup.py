@@ -48,7 +48,7 @@ setup(name='python-fmask',
     version=fmask.__version__,
     description='Module to implement the fmask cloud masking algorithm (Zhu, Wang & Woodcock 2015)',
     author='Neil Flood',
-    author_email='neil.flood@des.qld.gov.au',
+    author_email='n.flood@uq.edu.au',
     entry_points={
         'console_scripts': [
             'fmask_sentinel2makeAnglesImage.py = fmask.cmdline.sentinel2makeAnglesImage:mainRoutine',
