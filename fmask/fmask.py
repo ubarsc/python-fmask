@@ -207,7 +207,7 @@ def doFmask(fmaskFilenames, fmaskConfig):
     if not fmaskConfig.keepIntermediates:
         for filename in [pass1file, pass2file, interimCloudmask, potentialShadowsFile,
                 interimShadowmask]:
-            os.remove(filename)
+            deleteRaster(filename)
     else:
         # create a dictionary with the intermediate filenames so we can return them.
         retVal = {'pass1': pass1file, 'pass2': pass2file, 
@@ -1420,3 +1420,14 @@ def calcCDI(ref, fmaskConfig, refBands):
     cdi[divOK] = (v8a7[divOK] - v8a8[divOK]) / (v8a7[divOK] + v8a8[divOK])
 
     return (ratio8a8, ratio8a7, v8a8, v8a7, cdi)
+
+
+def deleteRaster(filename):
+    """
+    Use GDAL's Driver.Delete() method to fully delete the given raster file
+    """
+    ds = gdal.Open(filename)
+    if ds is not None:
+        drvr = ds.GetDriver()
+        del ds
+        drvr.Delete(filename)

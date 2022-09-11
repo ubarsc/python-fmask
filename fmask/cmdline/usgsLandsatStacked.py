@@ -265,5 +265,5 @@ def mainRoutine():
         for fn in [cmdargs.refstack, cmdargs.thermal, cmdargs.anglesfile, 
                 cmdargs.saturation, cmdargs.toa]:
             if os.path.exists(fn):
-                os.remove(fn)
+                fmask.deleteRaster(fn)
 
