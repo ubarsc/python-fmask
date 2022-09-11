@@ -227,7 +227,7 @@ def makeStackAndAngles(cmdargs):
         '-o', cmdargs.toa] + resampledBands)
     
     for fn in resampledBands:
-        os.remove(fn)
+        fmask.deleteRaster(fn)
 
     return resampledBands
 
@@ -394,10 +394,10 @@ def mainRoutine(argv=None):
     
     if (anglesfile != cmdargs.anglesfile):
         # Must have been a temporary, so remove it
-        os.remove(anglesfile)
+        fmask.deleteRaster(anglesfile)
     
     if tempStack and not cmdargs.keepintermediates:
         for fn in [cmdargs.toa, cmdargs.anglesfile]:
             if os.path.exists(fn):
-                os.remove(fn)
+                fmask.deleteRaster(fn)
     
