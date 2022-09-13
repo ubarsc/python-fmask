@@ -21,7 +21,6 @@ reflective and thermal and runs the fmask on it.
 from __future__ import print_function, division
 
 import os
-import sys
 import glob
 import argparse
 import tempfile
