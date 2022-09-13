@@ -209,7 +209,7 @@ def makeStackAndAngles(cmdargs):
     (fd, tmpStack) = tempfile.mkstemp(dir=cmdargs.tempdir, prefix="tmp_allbands_",
         suffix=".img")
     os.close(fd)
-    os.remove(tmpStack) # because gdal_merge wants to create it
+    os.remove(tmpStack)  # because gdal_merge wants to create it
     cmdargs.toa = tmpStack
 
     gdal_merge.main(['-q', '-of', DEFAULTDRIVERNAME] + CMDLINECREATIONOPTIONS + 
