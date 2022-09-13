@@ -25,18 +25,18 @@ import sys
 import glob
 import argparse
 import tempfile
-import subprocess
 from fmask import landsatTOA
 from fmask.cmdline import usgsLandsatMakeAnglesImage, usgsLandsatSaturationMask
 from fmask import config
 from fmask import fmaskerrors
 from fmask import fmask
 
+from osgeo_utils import gdal_merge
+
 from rios import fileinfo
 from rios.imagewriter import DEFAULTDRIVERNAME, dfltDriverOptions
-from rios.parallel.jobmanager import find_executable
 
-# for GDAL command line utilities
+# for GDAL.
 CMDLINECREATIONOPTIONS = []
 if DEFAULTDRIVERNAME in dfltDriverOptions:
     for opt in dfltDriverOptions[DEFAULTDRIVERNAME]:
@@ -115,11 +115,6 @@ def makeStacksAndAngles(cmdargs):
 
     cmdargs.mtl = mtlList[0]
 
-    gdalmergeCmd = find_executable("gdal_merge.py")
-    if gdalmergeCmd is None:
-        msg = "Unable to find gdal_merge.py command. Check installation of GDAL package. "
-        raise fmaskerrors.FmaskInstallationError(msg)
-
     # we need to find the 'SPACECRAFT_ID' to work out the wildcards to use
     mtlInfo = config.readMTLFile(cmdargs.mtl)
     landsat = mtlInfo['SPACECRAFT_ID'][-1]
@@ -152,8 +147,7 @@ def makeStacksAndAngles(cmdargs):
         suffix=".img")
     os.close(fd)
 
-    # use sys.executable so Windows works
-    subprocess.check_call([sys.executable, gdalmergeCmd, '-q', '-of', DEFAULTDRIVERNAME] +
+    gdal_merge.main(['-q', '-of', DEFAULTDRIVERNAME] +
             CMDLINECREATIONOPTIONS + ['-separate', '-o', tmpRefStack] + refFiles)
 
     # stash so we can delete later
@@ -165,7 +159,7 @@ def makeStacksAndAngles(cmdargs):
         suffix=".img")
     os.close(fd)
 
-    subprocess.check_call([sys.executable, gdalmergeCmd, '-q', '-of', DEFAULTDRIVERNAME] +
+    gdal_merge.main(['-q', '-of', DEFAULTDRIVERNAME] +
         CMDLINECREATIONOPTIONS + ['-separate', '-o', tmpThermStack] + thermalFiles)
 
     cmdargs.thermal = tmpThermStack
