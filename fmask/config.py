@@ -28,8 +28,6 @@ from osgeo import gdal
 from rios import applier
 from . import fmaskerrors
 
-gdal.UseExceptions()
-
 FMASK_LANDSAT47 = 0
 "Landsat 4 to 7"
 FMASK_LANDSAT8 = 1

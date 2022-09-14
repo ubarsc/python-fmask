@@ -49,8 +49,6 @@ from rios import cuiprogress
 
 from fmask import sen2meta
 
-gdal.UseExceptions()
-
 # This scale value will convert between DN and radians in output image file, 
 #    radians = dn * SCALE_TO_RADIANS
 SCALE_TO_RADIANS = 0.01
