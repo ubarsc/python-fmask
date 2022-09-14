@@ -1346,8 +1346,9 @@ def finalizeAll(fmaskFilenames, fmaskConfig, interimCloudmask, interimShadowmask
         # Failed to write the RAT, probably because the selected format does not support it. 
         # Just ignore it silently
         pass
-    if not usingExceptions:
-        gdal.DontUseExceptions()
+    finally:
+        if not usingExceptions:
+            gdal.DontUseExceptions()
 
 
 def maskAndBuffer(info, inputs, outputs, otherargs):
