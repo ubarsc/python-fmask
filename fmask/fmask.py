@@ -71,7 +71,6 @@ from . import fmaskerrors
 from . import zerocheck
 
 numpy.seterr(all='raise')
-gdal.UseExceptions()
 
 # Bands in the saturation mask, if supplied
 SATURATION_BLUE = 0
@@ -1337,7 +1336,9 @@ def finalizeAll(fmaskFilenames, fmaskConfig, interimCloudmask, interimShadowmask
                                                  [3, 255, 255, 0, 255],
                                                  [4, 85, 255, 255, 255],
                                                  [5, 0, 0, 255, 255]]))
-    
+
+    usingExceptions = gdal.GetUseExceptions()
+    gdal.UseExceptions()
     try:
         rat.writeColumn(outfiles.out, "Classification", [b"Null", b"Valid", b"Cloud", 
                                                     b"Cloud Shadow", b"Snow", b"Water"])
@@ -1345,6 +1346,9 @@ def finalizeAll(fmaskFilenames, fmaskConfig, interimCloudmask, interimShadowmask
         # Failed to write the RAT, probably because the selected format does not support it. 
         # Just ignore it silently
         pass
+    finally:
+        if not usingExceptions:
+            gdal.DontUseExceptions()
 
 
 def maskAndBuffer(info, inputs, outputs, otherargs):

@@ -21,22 +21,22 @@ reflective and thermal and runs the fmask on it.
 from __future__ import print_function, division
 
 import os
-import sys
 import glob
 import argparse
 import tempfile
-import subprocess
 from fmask import landsatTOA
 from fmask.cmdline import usgsLandsatMakeAnglesImage, usgsLandsatSaturationMask
 from fmask import config
 from fmask import fmaskerrors
 from fmask import fmask
 
+from osgeo_utils import gdal_merge
+from osgeo import gdal
+
 from rios import fileinfo
 from rios.imagewriter import DEFAULTDRIVERNAME, dfltDriverOptions
-from rios.parallel.jobmanager import find_executable
 
-# for GDAL command line utilities
+# for GDAL.
 CMDLINECREATIONOPTIONS = []
 if DEFAULTDRIVERNAME in dfltDriverOptions:
     for opt in dfltDriverOptions[DEFAULTDRIVERNAME]:
@@ -115,11 +115,6 @@ def makeStacksAndAngles(cmdargs):
 
     cmdargs.mtl = mtlList[0]
 
-    gdalmergeCmd = find_executable("gdal_merge.py")
-    if gdalmergeCmd is None:
-        msg = "Unable to find gdal_merge.py command. Check installation of GDAL package. "
-        raise fmaskerrors.FmaskInstallationError(msg)
-
     # we need to find the 'SPACECRAFT_ID' to work out the wildcards to use
     mtlInfo = config.readMTLFile(cmdargs.mtl)
     landsat = mtlInfo['SPACECRAFT_ID'][-1]
@@ -146,15 +141,20 @@ def makeStacksAndAngles(cmdargs):
     if len(thermalFiles) == 0:
         raise fmaskerrors.FmaskFileError("Cannot find expected thermal files for sensor")
 
+    # We need to turn off exceptions while using gdal_merge, as it doesn't cope
+    usingExceptions = gdal.GetUseExceptions()
+
     if cmdargs.verbose:
         print("Making stack of all reflectance bands")
     (fd, tmpRefStack) = tempfile.mkstemp(dir=cmdargs.tempdir, prefix="tmp_allrefbands_",
         suffix=".img")
     os.close(fd)
 
-    # use sys.executable so Windows works
-    subprocess.check_call([sys.executable, gdalmergeCmd, '-q', '-of', DEFAULTDRIVERNAME] +
+    gdal.DontUseExceptions()
+    gdal_merge.main(['-q', '-of', DEFAULTDRIVERNAME] +
             CMDLINECREATIONOPTIONS + ['-separate', '-o', tmpRefStack] + refFiles)
+    if usingExceptions:
+        gdal.UseExceptions()
 
     # stash so we can delete later
     cmdargs.refstack = tmpRefStack
@@ -165,8 +165,11 @@ def makeStacksAndAngles(cmdargs):
         suffix=".img")
     os.close(fd)
 
-    subprocess.check_call([sys.executable, gdalmergeCmd, '-q', '-of', DEFAULTDRIVERNAME] +
+    gdal.DontUseExceptions()
+    gdal_merge.main(['-q', '-of', DEFAULTDRIVERNAME] +
         CMDLINECREATIONOPTIONS + ['-separate', '-o', tmpThermStack] + thermalFiles)
+    if usingExceptions:
+        gdal.UseExceptions()
 
     cmdargs.thermal = tmpThermStack
 

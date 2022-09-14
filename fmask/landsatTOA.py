@@ -26,8 +26,6 @@ from osgeo import gdal
 from rios import applier, cuiprogress, fileinfo
 from . import config
 
-gdal.UseExceptions()
-
 # Derived by Pete Bunting from 6S
 LANDSAT8_ESUN = [1876.61, 1970.03, 1848.9, 1571.3, 967.66, 245.73, 82.03, 361.72]
 # From Chander, G., Markham, B.L., Helder, D.L. (2008)

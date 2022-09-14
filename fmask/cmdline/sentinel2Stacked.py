@@ -25,11 +25,12 @@ import os
 import argparse
 import tempfile
 import glob
-import subprocess
+
+from osgeo import gdal
+from osgeo_utils import gdal_merge
 
 from rios import fileinfo
 from rios.imagewriter import DEFAULTDRIVERNAME, dfltDriverOptions
-from rios.parallel.jobmanager import find_executable
 
 from fmask import config
 from fmask import fmaskerrors
@@ -37,21 +38,12 @@ from fmask.cmdline import sentinel2makeAnglesImage
 from fmask import fmask
 from fmask import sen2meta
 
-# for GDAL command line utilities
+# for GDAL.
 CMDLINECREATIONOPTIONS = []
 if DEFAULTDRIVERNAME in dfltDriverOptions:
     for opt in dfltDriverOptions[DEFAULTDRIVERNAME]:
         CMDLINECREATIONOPTIONS.append('-co')
         CMDLINECREATIONOPTIONS.append(opt)
-
-if sys.platform.startswith('win'):
-    GDALWARPCMDNAME = "gdalwarp.exe"
-else:
-    GDALWARPCMDNAME = "gdalwarp"
-GDALWARPCMD = find_executable(GDALWARPCMDNAME)
-if GDALWARPCMD is None:
-    msg = "Unable to find {} command. Check installation of GDAL package".format(GDALWARPCMDNAME)
-    raise fmaskerrors.FmaskInstallationError(msg)
 
 
 def getCmdargs(argv=None):
@@ -156,10 +148,12 @@ def checkAnglesFile(inputAnglesFile, toafile):
     if (toaImgInfo.xRes != anglesImgInfo.xRes) or (toaImgInfo.yRes != anglesImgInfo.yRes):
         (fd, vrtName) = tempfile.mkstemp(prefix='angles', suffix='.vrt')
         os.close(fd)
-        subprocess.check_call([GDALWARPCMD, '-q', '-of', 'VRT', '-tr', 
-            str(toaImgInfo.xRes), str(toaImgInfo.yRes), '-te', str(toaImgInfo.xMin),
-            str(toaImgInfo.yMin), str(toaImgInfo.xMax), str(toaImgInfo.yMax),
-            '-r', 'near', inputAnglesFile, vrtName])
+        
+        options = gdal.WarpOptions(format='VRT', xRes=toaImgInfo.xRes, 
+            yRes=toaImgInfo.yRes, outputBounds=[toaImgInfo.xMin, toaImgInfo.yMin,
+            toaImgInfo.xMax, toaImgInfo.yMax], resampleAlg='near')
+        gdal.Warp(vrtName, inputAnglesFile, options=options)
+
         outputAnglesFile = vrtName
     
     return outputAnglesFile
@@ -173,12 +167,6 @@ def makeStackAndAngles(cmdargs):
     """
     if cmdargs.granuledir is None and cmdargs.safedir is not None:
         cmdargs.granuledir = findGranuleDir(cmdargs.safedir)
-
-    # Find the other commands we need, even under Windoze
-    gdalmergeCmd = find_executable("gdal_merge.py")
-    if gdalmergeCmd is None:
-        msg = "Unable to find gdal_merge.py command. Check installation of GDAL package. "
-        raise fmaskerrors.FmaskInstallationError(msg)
 
     # Make the angles file
     (fd, anglesfile) = tempfile.mkstemp(dir=cmdargs.tempdir, prefix="angles_tmp_", 
@@ -208,9 +196,10 @@ def makeStackAndAngles(cmdargs):
 
         # Now make a resampled copy to the desired pixel size, using the right resample method
         resampleMethod = chooseResampleMethod(cmdargs.pixsize, inBandImg)
-        subprocess.check_call([GDALWARPCMD, '-q', '-tr', str(cmdargs.pixsize),
-            str(cmdargs.pixsize), '-co', 'TILED=YES', '-of', 'VRT', '-r',
-            resampleMethod, inBandImg, tmpBand])
+        
+        options = gdal.WarpOptions(format='VRT', resampleAlg=resampleMethod,
+            xRes=cmdargs.pixsize, yRes=cmdargs.pixsize)
+        gdal.Warp(tmpBand, inBandImg, options=options)
         
         resampledBands.append(tmpBand)
     
@@ -221,10 +210,14 @@ def makeStackAndAngles(cmdargs):
         suffix=".img")
     os.close(fd)
     cmdargs.toa = tmpStack
-    # ensure we are launching python rather than relying on the OS to do the right thing (ie Windows)
-    subprocess.check_call([sys.executable, gdalmergeCmd, '-q', '-of', 
-            DEFAULTDRIVERNAME] + CMDLINECREATIONOPTIONS + ['-separate', 
-        '-o', cmdargs.toa] + resampledBands)
+
+    # We need to turn off exceptions while using gdal_merge, as it doesn't cope
+    usingExceptions = gdal.GetUseExceptions()
+    gdal.DontUseExceptions()
+    gdal_merge.main(['-q', '-of', DEFAULTDRIVERNAME] + CMDLINECREATIONOPTIONS + 
+        ['-separate', '-o', cmdargs.toa] + resampledBands)
+    if usingExceptions:
+        gdal.UseExceptions()
     
     for fn in resampledBands:
         fmask.deleteRaster(fn)
