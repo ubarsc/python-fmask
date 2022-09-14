@@ -31,6 +31,7 @@ from fmask import fmaskerrors
 from fmask import fmask
 
 from osgeo_utils import gdal_merge
+from osgeo import gdal
 
 from rios import fileinfo
 from rios.imagewriter import DEFAULTDRIVERNAME, dfltDriverOptions
@@ -140,15 +141,20 @@ def makeStacksAndAngles(cmdargs):
     if len(thermalFiles) == 0:
         raise fmaskerrors.FmaskFileError("Cannot find expected thermal files for sensor")
 
+    # We need to turn off exceptions while using gdal_merge, as it doesn't cope
+    usingExceptions = gdal.GetUseExceptions()
+
     if cmdargs.verbose:
         print("Making stack of all reflectance bands")
     (fd, tmpRefStack) = tempfile.mkstemp(dir=cmdargs.tempdir, prefix="tmp_allrefbands_",
         suffix=".img")
     os.close(fd)
-    os.remove(tmpRefStack)  # because gdal_merge wants to create it
 
+    gdal.DontUseExceptions()
     gdal_merge.main(['-q', '-of', DEFAULTDRIVERNAME] +
             CMDLINECREATIONOPTIONS + ['-separate', '-o', tmpRefStack] + refFiles)
+    if usingExceptions:
+        gdal.UseExceptions()
 
     # stash so we can delete later
     cmdargs.refstack = tmpRefStack
@@ -158,10 +164,12 @@ def makeStacksAndAngles(cmdargs):
     (fd, tmpThermStack) = tempfile.mkstemp(dir=cmdargs.tempdir, prefix="tmp_allthermalbands_",
         suffix=".img")
     os.close(fd)
-    os.remove(tmpThermStack)  # because gdal_merge wants to create it
 
+    gdal.DontUseExceptions()
     gdal_merge.main(['-q', '-of', DEFAULTDRIVERNAME] +
         CMDLINECREATIONOPTIONS + ['-separate', '-o', tmpThermStack] + thermalFiles)
+    if usingExceptions:
+        gdal.UseExceptions()
 
     cmdargs.thermal = tmpThermStack
 

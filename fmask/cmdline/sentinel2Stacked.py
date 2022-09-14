@@ -209,11 +209,15 @@ def makeStackAndAngles(cmdargs):
     (fd, tmpStack) = tempfile.mkstemp(dir=cmdargs.tempdir, prefix="tmp_allbands_",
         suffix=".img")
     os.close(fd)
-    os.remove(tmpStack)  # because gdal_merge wants to create it
     cmdargs.toa = tmpStack
 
+    # We need to turn off exceptions while using gdal_merge, as it doesn't cope
+    usingExceptions = gdal.GetUseExceptions()
+    gdal.DontUseExceptions()
     gdal_merge.main(['-q', '-of', DEFAULTDRIVERNAME] + CMDLINECREATIONOPTIONS + 
         ['-separate', '-o', cmdargs.toa] + resampledBands)
+    if usingExceptions:
+        gdal.UseExceptions()
     
     for fn in resampledBands:
         fmask.deleteRaster(fn)
