@@ -1,6 +1,19 @@
 Release Notes
 =============
 
+Version 0.5. (2022-12-22)
+--------------------------
+
+Bug Fixes
+  * Cope with numpy-1.2.4 removal of deprecated type symbols like numpy.bool
+  * Better handling of gdal exception use/non-use
+
+Enhancements
+  * Use gdal.Driver.Delete to remove temporary files in Sentinel-2 cmdline
+    script
+  * Use gdal internal function calls to avoid use of os.system()
+
+
 Version 0.5.7 (2022-02-11)
 --------------------------
 
