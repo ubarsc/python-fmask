@@ -352,7 +352,7 @@ def potentialCloudFirstPass(info, inputs, outputs, otherargs):
         # Brightness temperature in degrees C
         bt = otherargs.thermalInfo.scaleThermalDNtoC(inputs.thermal)
     else:
-        thermNullmask = numpy.zeros_like(ref[0], dtype=numpy.bool)
+        thermNullmask = numpy.zeros_like(ref[0], dtype=bool)
         nullmask = refNullmask
     
     # Equation 1
@@ -631,7 +631,7 @@ def potentialCloudSecondPass(info, inputs, outputs, otherargs):
     Twater = otherargs.Twater
     (Tlow, Thigh) = (otherargs.Tlow, otherargs.Thigh)
     # Values from first pass
-    clearLand = inputs.pass1[2].astype(numpy.bool)
+    clearLand = inputs.pass1[2].astype(bool)
     variabilityProbPcnt = inputs.pass1[3]
     variability_prob = variabilityProbPcnt / PROB_SCALE
     
@@ -724,9 +724,9 @@ def cloudFinalPass(info, inputs, outputs, otherargs):
     
     Final pass of cloud mask layer
     """
-    nullmask = inputs.pass1[4].astype(numpy.bool)
-    pcp = inputs.pass1[0].astype(numpy.bool)
-    waterTest = inputs.pass1[1].astype(numpy.bool)
+    nullmask = inputs.pass1[4].astype(bool)
+    pcp = inputs.pass1[0].astype(bool)
+    waterTest = inputs.pass1[1].astype(bool)
     notWater = numpy.logical_not(waterTest)
     notWater[nullmask] = False
     wCloud_prob = inputs.pass2[0] / PROB_SCALE
@@ -744,14 +744,14 @@ def cloudFinalPass(info, inputs, outputs, otherargs):
     # For now I only disabled it for S2, because it gives a lot of false
     # positives due to missing a thermal band.
     if (otherargs.sensor == config.FMASK_SENTINEL2):
-        cloudmask3 = numpy.zeros(cloudmask1.shape, dtype=numpy.bool)
+        cloudmask3 = numpy.zeros(cloudmask1.shape, dtype=bool)
     else:
         cloudmask3 = (lCloud_prob > 0.99) & notWater
     if Tlow is not None:
         cloudmask4 = (bt < (Tlow - 35))
     else:
         # Not enough land for final test. Also come here when missing thermal.
-        cloudmask4 = numpy.zeros(cloudmask1.shape, dtype=numpy.bool)
+        cloudmask4 = numpy.zeros(cloudmask1.shape, dtype=bool)
         
     # Equation 18
     cloudmask = cloudmask1 | cloudmask2 | cloudmask3 | cloudmask4
@@ -1115,12 +1115,12 @@ def matchShadows(fmaskConfig, interimCloudmask, potentialShadowsFile,
     ds = gdal.Open(potentialShadowsFile)
     band = ds.GetRasterBand(1)
     (xoff, yoff) = topLeftDict[potentialShadowsFile]
-    potentialShadow = band.ReadAsArray(xoff, yoff, ncols, nrows).astype(numpy.bool)
+    potentialShadow = band.ReadAsArray(xoff, yoff, ncols, nrows).astype(bool)
     del ds
     ds = gdal.Open(interimCloudmask)
     band = ds.GetRasterBand(1)
     (xoff, yoff) = topLeftDict[interimCloudmask]
-    cloudmask = band.ReadAsArray(xoff, yoff, ncols, nrows).astype(numpy.bool)
+    cloudmask = band.ReadAsArray(xoff, yoff, ncols, nrows).astype(bool)
     geotrans = ds.GetGeoTransform()
     (xRes, yRes) = (geotrans[1], geotrans[5])
     (xsize, ysize) = (ds.RasterXSize, ds.RasterYSize)
@@ -1129,14 +1129,14 @@ def matchShadows(fmaskConfig, interimCloudmask, potentialShadowsFile,
     ds = gdal.Open(pass1file)
     band = ds.GetRasterBand(5)
     (xoff, yoff) = topLeftDict[pass1file]
-    nullmask = band.ReadAsArray(xoff, yoff, ncols, nrows).astype(numpy.bool)
+    nullmask = band.ReadAsArray(xoff, yoff, ncols, nrows).astype(bool)
     del ds
 
     (fd, interimShadowmask) = tempfile.mkstemp(prefix='matchedshadows', dir=fmaskConfig.tempDir, 
                                         suffix=fmaskConfig.defaultExtension)
     os.close(fd)
     
-    shadowmask = numpy.zeros(potentialShadow.shape, dtype=numpy.bool)
+    shadowmask = numpy.zeros(potentialShadow.shape, dtype=bool)
     
     unmatchedCount = 0
     cloudIDlist = shadowShapesDict.keys()
@@ -1235,7 +1235,7 @@ def matchOneShadow(cloudmask, shadowEntry, potentialShadow, Tcloudbase, Tlow, Th
     col0 = shapeNdx[1].min()
     colN = shapeNdx[1].max()
     (nrows, ncols) = ((rowN - row0 + 1), (colN - col0 + 1))
-    shadowTemplate = numpy.zeros((nrows, ncols), dtype=numpy.bool)
+    shadowTemplate = numpy.zeros((nrows, ncols), dtype=bool)
     shadowTemplate[shapeNdx[0] - row0, shapeNdx[1] - col0] = True
     
     # Step this template across the potential shadows until we match. 
@@ -1364,13 +1364,13 @@ def maskAndBuffer(info, inputs, outputs, otherargs):
            mask, even after buffering, etc. 
     
     """
-    snow = inputs.pass1[5].astype(numpy.bool)
-    nullmask = inputs.pass1[4].astype(numpy.bool)
+    snow = inputs.pass1[5].astype(bool)
+    nullmask = inputs.pass1[4].astype(bool)
     resetNullmask = nullmask
 
-    cloud = inputs.cloud[0].astype(numpy.bool)
-    shadow = inputs.shadow[0].astype(numpy.bool)
-    water = inputs.pass1[1].astype(numpy.bool)
+    cloud = inputs.cloud[0].astype(bool)
+    shadow = inputs.shadow[0].astype(bool)
+    water = inputs.pass1[1].astype(bool)
     
     # Buffer the cloud
     if hasattr(otherargs, 'bufferkernel'):

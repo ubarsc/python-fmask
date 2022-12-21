@@ -119,7 +119,7 @@ def riosTOA(info, inputs, outputs, otherinputs):
     """
     nbands = inputs.infile.shape[0]
 
-    infile = inputs.infile.astype(numpy.float)
+    infile = inputs.infile.astype(numpy.float32)
     inIgnore = otherinputs.inNull
     if inIgnore is None:
         inIgnore = 0

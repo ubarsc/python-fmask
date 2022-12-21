@@ -93,24 +93,25 @@ def makeAngles(infile, outfile):
     # Anomaly number 11 in the following page. 
     # https://sentinel.esa.int/web/sentinel/news/-/article/new-processing-baseline-for-sentinel-2-products
     bandNames = sorted(info.viewAzimuthDict.keys())
-    
+
     # Mean over all bands
     satAzDeg = numpy.array([info.viewAzimuthDict[i] for i in bandNames])
     satAzDegMeanOverBands = satAzDeg.mean(axis=0)
-    
+
     satZenDeg = numpy.array([info.viewZenithDict[i] for i in bandNames])
     satZenDegMeanOverBands = satZenDeg.mean(axis=0)
 
     sunAzDeg = info.sunAzimuthGrid
-    
+
     sunZenDeg = info.sunZenithGrid
-    
+
     stackDeg = numpy.array([satAzDegMeanOverBands, satZenDegMeanOverBands, sunAzDeg, sunZenDeg])
     stackRadians = numpy.radians(stackDeg)
-    
-    stackDN = numpy.round(stackRadians / SCALE_TO_RADIANS).astype(numpy.int16)
+
+    stackDN = numpy.round(stackRadians / SCALE_TO_RADIANS)
     nullmask = numpy.isnan(stackDeg)
     stackDN[nullmask] = nullValDN
+    stackDN = stackDN.astype(numpy.int16)
     
     lnames = ['SatelliteAzimuth', 'SatelliteZenith', 'SunAzimuth', 'SunZenith']
     for i in range(ds.RasterCount):
