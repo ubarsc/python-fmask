@@ -5,7 +5,7 @@ Version 0.5.8 (2022-12-22)
 --------------------------
 
 Bug Fixes
-  * Cope with numpy-1.2.4 removal of deprecated type symbols like numpy.bool
+  * Cope with numpy-1.24 removal of deprecated type symbols like numpy.bool
   * Better handling of gdal exception use/non-use
 
 Enhancements
