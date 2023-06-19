@@ -14,6 +14,7 @@
 # serve to show the default.
 
 import sys
+sys.path.insert(0, os.path.abspath('../..'))
 import fmask  # for version info
 
 # Set up 'mock' modules, needed to build docs if numpy, gdal etc., aren't installed
