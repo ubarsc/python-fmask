@@ -15,12 +15,13 @@
 
 import sys
 import os
-sys.path.insert(0, os.path.abspath('../..'))
-import fmask  # for version info
-
 # Set up 'mock' modules, needed to build docs if numpy, gdal etc., aren't installed
 import mock
 import importlib
+
+sys.path.insert(0, os.path.abspath('../..'))
+# for version info
+import fmask        # noqa: E402
 
 MOCK_MODULES = ['numpy', 'scipy', 'scipy.ndimage', 'scipy.constants',
     'scipy.stats', 'osgeo', 'gdal', 'osgeo.gdal', 'rios', 'fmask._fillminima',
