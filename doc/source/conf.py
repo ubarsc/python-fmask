@@ -15,22 +15,23 @@
 
 import sys
 import os
-# Set up 'mock' modules, needed to build docs if numpy, gdal etc., aren't installed
-import mock
 import importlib
 
 sys.path.insert(0, os.path.abspath('../..'))
 # for version info
 import fmask        # noqa: E402
 
+# List of modules we will mock, but only if they are not genuinely present
 MOCK_MODULES = ['numpy', 'scipy', 'scipy.ndimage', 'scipy.constants',
     'scipy.stats', 'osgeo', 'gdal', 'osgeo.gdal', 'rios', 'fmask._fillminima',
     'fmask._valueindexes']
+# Check which ones are not present, and add them to the mock list
+autodoc_mock_imports = []
 for mod_name in MOCK_MODULES:
     try:
         importlib.import_module(mod_name)
     except ImportError:
-        sys.modules[mod_name] = mock.Mock()
+        autodoc_mock_imports.append(mod_name)
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
