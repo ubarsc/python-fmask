@@ -62,6 +62,15 @@ setup(name='python-fmask',
     author='Neil Flood',
     author_email='n.flood@uq.edu.au',
     scripts=scriptList,
+    entry_points={
+        'console_scripts': [
+            'fmask_sentinel2makeAnglesImage = fmask.cmdline.sentinel2makeAnglesImage:mainRoutine',
+            'fmask_sentinel2Stacked = fmask.cmdline.sentinel2Stacked:mainRoutine',
+            'fmask_usgsLandsatMakeAnglesImage = fmask.cmdline.usgsLandsatMakeAnglesImage:mainRoutine',
+            'fmask_usgsLandsatSaturationMask = fmask.cmdline.usgsLandsatSaturationMask:mainRoutine',
+            'fmask_usgsLandsatStacked = fmask.cmdline.usgsLandsatStacked:mainRoutine',
+            'fmask_usgsLandsatTOA = fmask.cmdline.usgsLandsatTOA:mainRoutine'
+        ]},
     packages=['fmask', 'fmask/cmdline'],
     ext_package='fmask',
     ext_modules=extensionsList,

@@ -1,3 +1,8 @@
+
+WARNING: To install python-fmask it is strongly  recommended to use the conda forge
+pre-built binaries. Only install from source if you absolutely must.
+
+
 To install python-fmask from the source code bundle, use the following commands
 
 First unpack the bundle. For the tar.gz file, this would be 
