@@ -770,6 +770,8 @@ def cloudFinalPass(info, inputs, outputs, otherargs):
     # they set a pixel to cloud if 5 or more of its 3x3 neighbours is cloud. 
     # This little incantation will do exactly the same. 
     bufferedCloudmask = (uniform_filter(cloudmask * 2.0, size=3) >= 1.0)
+    # convert to int so we can write it with GDAL
+    bufferedCloudmask = bufferedCloudmask.astype(numpy.uint8)
 
     bufferedCloudmask[nullmask] = 0
     
