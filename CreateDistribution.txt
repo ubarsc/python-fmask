@@ -3,19 +3,19 @@ How to create a distribution of python-fmask.
 1. Ensure that you have pulled and committed everything which needs to go in.
 2. Change the version number in the fmask/__init__.py. Version number
    is of the form a.b.c, as discussed below. 
-   DON'T FORGET TO COMMIT THIS, BEFORE THE NEXT STEP!!!!
 3. Update the release notes page in the doco (doc/source/releasenotes.rst), 
    by going through the change logs since the last release, and noting 
    what has been done. 
-   COMMIT THIS CHANGE!!!
-4. Use "git tag" to add a version number tag, e.g.
-    git tag pythonfmask-0.3.1
-5. Push the changes to github with "git push".
-6. Check out a clean copy of the repository into /tmp or
+   DON'T FORGET TO COMMIT THIS, BEFORE THE NEXT STEP!!!!
+4. Push the changes to github with "git push" and create a PR for it and merge it.
+5. Check out a clean copy of the repository into /tmp or
    somewhere similar and 'cd' into it.
-7. Create the distribution tarball, using
+6. Create the distribution tarball, using
     python setup.py sdist --formats=gztar,zip
    This creates both a tar.gz and a zip, under a subdirectory called dist
+7. Create checksums of each of these, e.g.
+       sha256sum python-fmask-0.5.9.tar.gz > python-fmask-0.5.9.tar.gz.sha256
+       sha256sum python-fmask-0.5.9.zip > python-fmask-0.5.9.zip.sha256
 8. Go to the https://github.com/ubarsc/python-fmask/releases page, and create a 
    new release by pressing "Draft a new release". 
    You should fill in the following:
