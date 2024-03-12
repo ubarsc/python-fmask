@@ -4,8 +4,9 @@ How to create a distribution of python-fmask.
 2. Change the version number in the fmask/__init__.py. Version number
    is of the form a.b.c, as discussed below. 
    DON'T FORGET TO COMMIT THIS, BEFORE THE NEXT STEP!!!!
-3. Update the release notes page in the doco, by going through the change 
-   logs since the last release, and noting what has been done. 
+3. Update the release notes page in the doco (doc/source/releasenotes.rst), 
+   by going through the change logs since the last release, and noting 
+   what has been done. 
    COMMIT THIS CHANGE!!!
 4. Use "git tag" to add a version number tag, e.g.
     git tag pythonfmask-0.3.1

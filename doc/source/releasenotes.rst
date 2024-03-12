@@ -1,6 +1,20 @@
 Release Notes
 =============
 
+Version 0.5.9 (2024-03-13)
+--------------------------
+
+Bug Fixes:
+  * Convert from bool to uint8 before writing a mask as latest RIOS no 
+    longer supports writing bool arrays
+    
+Enhancements:
+  * Add support for entrypoints using "pip install". These entrypoints 
+    cannot have an extension so to reduce confusion the documentation
+    has been updated to cover using these new entrypoints (no '.py').
+    The conda package will be similarly updated. The old scripts remain 
+    as they are, although they now emit a warning.
+
 Version 0.5.8 (2022-12-22)
 --------------------------
 
