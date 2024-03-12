@@ -28,6 +28,8 @@ from osgeo import gdal
 from rios import applier
 from . import fmaskerrors
 
+gdal.UseExceptions()
+
 FMASK_LANDSAT47 = 0
 "Landsat 4 to 7"
 FMASK_LANDSAT8 = 1
@@ -436,7 +438,7 @@ class FmaskFilenames(object):
         This should have numbers which are reflectance * 1000
         
         Use the :func:`fmask.landsatTOA.makeTOAReflectance` function to create
-        this file from raw Landsat radiance (or the fmask_usgsLandsatTOA.py
+        this file from raw Landsat radiance (or the fmask_usgsLandsatTOA
         command line program supplied with fmask).
         
         It is assumed that any values that are nulls in the original radiance
@@ -686,7 +688,7 @@ class AnglesFileInfo(AnglesInfo):
         self.viewZenithData = None
         self.viewAzimuthData = None
         
-        # This default value matches the file produced by fmask_usgsLandsatMakeAnglesImage.py
+        # This default value matches the file produced by fmask_usgsLandsatMakeAnglesImage
         self.scaleToRadians = 0.01
     
     @staticmethod

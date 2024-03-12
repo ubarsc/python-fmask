@@ -102,7 +102,7 @@ The command line scripts supplied can process an untarred USGS Landsat scene.
 Here is an example of how to do this. This command will take a given scene directory, 
 find the right images, and create an output file called cloud.img::
 
-    fmask_usgsLandsatStacked.py -o cloud.img --scenedir LC08_L1TP_150033_20150413_20170410_01_T1
+    fmask_usgsLandsatStacked -o cloud.img --scenedir LC08_L1TP_150033_20150413_20170410_01_T1
 
 If the thermal band is empty (for Landsat-8 with the SSM anomaly, after 2015-11-01) then it
 is ignored gracefully.
@@ -125,13 +125,13 @@ slower, and is unlikely to be any more accurate.
 This command will take a given .SAFE directory, find the right images, and create an
 output file called cloud.img::
 
-    fmask_sentinel2Stacked.py -o cloud.img --safedir S2B_MSIL1C_20180918T235239_N0206_R130_T56JNQ_20180919T011001.SAFE
+    fmask_sentinel2Stacked -o cloud.img --safedir S2B_MSIL1C_20180918T235239_N0206_R130_T56JNQ_20180919T011001.SAFE
 
 When working with the old ESA zipfile format, which packed multiple tiles into a single SAFE-format
 zipfile, this approach will not work, as it won't know which tile to process. So, instead, use
 the option to specify the granule directory, as follows::
 
-    fmask_sentinel2Stacked.py -o cloud.img --granuledir S2A_OPER_PRD_MSIL1C_PDMC_20160111T072442_R030_V20160111T000425_20160111T000425.SAFE/GRANULE/S2A_OPER_MSI_L1C_TL_SGS__20160111T051031_A002887_T56JNQ_N02.01
+    fmask_sentinel2Stacked -o cloud.img --granuledir S2A_OPER_PRD_MSIL1C_PDMC_20160111T072442_R030_V20160111T000425_20160111T000425.SAFE/GRANULE/S2A_OPER_MSI_L1C_TL_SGS__20160111T051031_A002887_T56JNQ_N02.01
 
 This would also work on a new-format directory, but specifying the top .SAFE directory is easier. 
 
@@ -155,13 +155,11 @@ Get the source as a bundle from `GitHub <https://github.com/ubarsc/python-fmask/
 Release notes for each version can be read in :doc:`releasenotes`. To install from source,
 read the INSTALL.txt file included inside the source bundle.
 
-Pre-built binary `Conda <http://conda.pydata.org/miniconda.html#miniconda>`_ packages are available
+Pre-built binary `Conda <https://github.com/conda-forge/miniforge>`_ packages are available
 under the 'conda-forge' channel. Once you have installed
-`Conda <http://conda.pydata.org/miniconda.html#miniconda>`_, run the following commands on the
+`Conda <https://github.com/conda-forge/miniforge>`_, run the following commands on the
 command line to install python-fmask: ::
 
-    conda config --add channels conda-forge
-    conda config --set channel_priority strict
     conda create -n myenv python-fmask
     conda activate myenv
 

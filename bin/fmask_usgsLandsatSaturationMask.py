@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 from fmask.cmdline import usgsLandsatSaturationMask
+import warnings
+warnings.warn("Future versions of fmask may remove the .py extension from this script name", DeprecationWarning)
 
 if __name__ == '__main__':
     usgsLandsatSaturationMask.mainRoutine()

@@ -31,6 +31,8 @@ from osgeo import osr
 
 from . import fmaskerrors
 
+osr.UseExceptions()
+
 
 class Sen2TileMeta(object):
     """

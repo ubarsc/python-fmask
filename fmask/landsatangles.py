@@ -68,6 +68,8 @@ from osgeo import osr
 from rios import applier
 from rios import fileinfo
 
+osr.UseExceptions()
+
 
 def findImgCorners(img, imgInfo):
     """

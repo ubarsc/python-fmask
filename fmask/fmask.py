@@ -71,6 +71,7 @@ from . import fmaskerrors
 from . import zerocheck
 
 numpy.seterr(all='raise')
+gdal.UseExceptions()
 
 # Bands in the saturation mask, if supplied
 SATURATION_BLUE = 0
