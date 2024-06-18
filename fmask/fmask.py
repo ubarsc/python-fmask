@@ -1233,10 +1233,10 @@ def matchOneShadow(cloudmask, shadowEntry, potentialShadow, Tcloudbase, Tlow, Th
     Ystep = (Yoff_max - Yoff_min) / numSteps
     
     # shadowTemplate is a rectangle containing just the shadow shape to be shifted
-    row0 = shapeNdx[0].min()
-    rowN = shapeNdx[0].max()
-    col0 = shapeNdx[1].min()
-    colN = shapeNdx[1].max()
+    row0 = int(shapeNdx[0].min())
+    rowN = int(shapeNdx[0].max())
+    col0 = int(shapeNdx[1].min())
+    colN = int(shapeNdx[1].max())
     (nrows, ncols) = ((rowN - row0 + 1), (colN - col0 + 1))
     shadowTemplate = numpy.zeros((nrows, ncols), dtype=bool)
     shadowTemplate[shapeNdx[0] - row0, shapeNdx[1] - col0] = True
