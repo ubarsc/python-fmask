@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.5.10 (2024-06-19)
+---------------------------
+
+Bug Fixes
+  * Cope with numpy-2.0 changes (https://github.com/ubarsc/python-fmask/pull/79)
+
 Version 0.5.9 (2024-03-13)
 --------------------------
 
