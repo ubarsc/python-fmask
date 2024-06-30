@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel", "numpy"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "python-fmask"
+dynamic = ["version"]
+authors = [
+  {name = "Sam Gillingham"},
+  {name = "Neil Flood"}
+]
+description = "Implement the Fmask cloud masking algorithm (Zhu, Wang & Woodcock 2015)"
+readme = "README.md"
+license = {file = "LICENSE.txt"}
+
+[project.scripts]
+fmask_sentinel2makeAnglesImage = "fmask.cmdline.sentinel2makeAnglesImage:mainRoutine"
+fmask_sentinel2Stacked = "fmask.cmdline.sentinel2Stacked:mainRoutine"
+fmask_usgsLandsatMakeAnglesImage = "fmask.cmdline.usgsLandsatMakeAnglesImage:mainRoutine"
+fmask_usgsLandsatSaturationMask = "fmask.cmdline.usgsLandsatSaturationMask:mainRoutine"
+fmask_usgsLandsatStacked = "fmask.cmdline.usgsLandsatStacked:mainRoutine"
+fmask_usgsLandsatTOA = "fmask.cmdline.usgsLandsatTOA:mainRoutine"
+
+[project.urls]
+Repository = "https://github.com/ubarsc/python-fmask.git"
+Homepage = "https://www.pythonfmask.org"
+
+[tool.setuptools.dynamic]
+version = {attr = "fmask.__version__"}
+
+[tool.setuptools.packages.find]
+namespaces = false      # Excludes subdirectories with no __init__.py

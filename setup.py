@@ -15,73 +15,53 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+# This setup.py now only covers how to compile the C extension modules. All
+# other information has been moved into pyprojects.toml.
+#
+
+import sys
 import os
 import glob
-import fmask
 
 from setuptools import setup, Extension
+
+
+# So I can import fmask itself, which will allow access to fmask.__version__
+# to support the dynamic version attribute specified in pyproject.toml
+# Don't forget to close your left eye, and hold your tongue at an angle
+# of 45 degrees....
+sys.path.append(".")
 
 try:
     from numpy import get_include as numpy_get_include
     withExtensions = True
 except ImportError:
+    # I suspect that this can no longer happen. We had to add numpy as a
+    # build-time dependency inside the pyproject.toml file, which I think
+    # means that it will always be present during any build process, even
+    # on ReadTheDocs or similar.
     withExtensions = False
 
-# Are we installing the command line scripts?
-# this is an experimental option for users who are
-# using the Python entry point feature of setuptools and Conda instead
-NO_INSTALL_CMDLINE = int(os.getenv('FMASK_NOCMDLINE', '0')) > 0
-
-# use the latest numpy API
+# Use the latest numpy API.
+# Not sure if this should be updated for numpy-2.... ??
 NUMPY_MACROS = ('NPY_NO_DEPRECATED_API', 'NPY_1_7_API_VERSION')
 
 if withExtensions:
     # This is for a normal build
-    fillminimaC = Extension(name='_fillminima',
+    fillminimaC = Extension(name='fmask._fillminima',
         define_macros=[NUMPY_MACROS],
-        sources=['src/fillminima.c'],
+        sources=['c_src/fillminima.c'],
         include_dirs=[numpy_get_include()])
-    valueIndexesC = Extension(name='_valueindexes',
+    valueIndexesC = Extension(name='fmask._valueindexes',
         define_macros=[NUMPY_MACROS],
-        sources=['src/valueindexes.c'],
+        sources=['c_src/valueindexes.c'],
         include_dirs=[numpy_get_include()])
     extensionsList = [fillminimaC, valueIndexesC]
 else:
-    # This would be for a ReadTheDocs build. 
+    # This would be for a ReadTheDocs build. As noted above, this probably never
+    # happens anymore, since the addition of pyproject.toml
     extensionsList = []
 
-if NO_INSTALL_CMDLINE:
-    scriptList = None
-else:
-    scriptList = glob.glob("bin/*.py")
-    
 # do the setup
-setup(name='python-fmask',
-    version=fmask.__version__,
-    description='Module to implement the fmask cloud masking algorithm (Zhu, Wang & Woodcock 2015)',
-    author='Neil Flood',
-    author_email='n.flood@uq.edu.au',
-    scripts=scriptList,
-    entry_points={
-        'console_scripts': [
-            'fmask_sentinel2makeAnglesImage = fmask.cmdline.sentinel2makeAnglesImage:mainRoutine',
-            'fmask_sentinel2Stacked = fmask.cmdline.sentinel2Stacked:mainRoutine',
-            'fmask_usgsLandsatMakeAnglesImage = fmask.cmdline.usgsLandsatMakeAnglesImage:mainRoutine',
-            'fmask_usgsLandsatSaturationMask = fmask.cmdline.usgsLandsatSaturationMask:mainRoutine',
-            'fmask_usgsLandsatStacked = fmask.cmdline.usgsLandsatStacked:mainRoutine',
-            'fmask_usgsLandsatTOA = fmask.cmdline.usgsLandsatTOA:mainRoutine'
-        ]},
-    packages=['fmask', 'fmask/cmdline'],
-    ext_package='fmask',
-    ext_modules=extensionsList,
-    license='LICENSE.txt',
-    url='https://www.pythonfmask.org/',
-    classifiers=['Intended Audience :: Developers',
-        'Operating System :: OS Independent',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6'])
+setup(ext_modules=extensionsList)
           
