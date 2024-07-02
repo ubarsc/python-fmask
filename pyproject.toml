@@ -1,10 +1,10 @@
 # Note that we do not explicitly list the requirements. This is because the
-# main one is GDAL, which is not managed on PyPI (for good reasons), and
+# main one is GDAL (via rios), which is not managed on PyPI (for good reasons), and
 # therefore cannot be satisfactorily managed with pip. If we list it as a
 # requirement, this mainly just creates confusion. GDAL must be installed
 # by other means. For the same reason, this package is itself not available
 # from PyPI.
-# The actual requirements are GDAL and scipy.
+# The actual requirements are rios (which requires GDAL) and scipy.
 #
 # Installation requires pip>=23.0.
 #
