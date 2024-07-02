@@ -21,8 +21,6 @@ other information has been moved into pyprojects.toml.
 """
 
 import sys
-import os
-import glob
 
 from setuptools import setup, Extension
 
