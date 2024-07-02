@@ -42,9 +42,21 @@ except ImportError:
     # on ReadTheDocs or similar.
     withExtensions = False
 
-# Use the latest numpy API.
-# Not sure if this should be updated for numpy-2.... ??
-NUMPY_MACROS = ('NPY_NO_DEPRECATED_API', 'NPY_1_7_API_VERSION')
+# This is numpy's mechanism for creating compile-time warnings for
+# deprecated API calls. I think it works something like this.
+# If the symbol NPY_NO_DEPRECATED_API is not defined at all, there will
+# be a warning about that. If it is defined, as a given numpy version, then
+# the include files for anything deprecated from the given version will be
+# excluded/altered at compile-time, and so if those calls are actually used,
+# that will trigger a warning message. So, the numpy version number used should
+# be as late as possible, in order to generate the most up-to-date compile-time
+# warnings. I am uncertain whether this actually works, because it seems we
+# are not using any deprecated calls. Let's hope this is true.
+# See https://numpy.org/doc/stable/reference/c-api/deprecations.html
+# for a not-very-clear explanation.
+# The messages are not visible during the install process (i.e. using pip),
+# but ARE visible during the build process, i.e. when using "python -m build"
+NUMPY_MACROS = ('NPY_NO_DEPRECATED_API', 'NPY_2_0_API_VERSION')
 
 if withExtensions:
     # This is for a normal build
