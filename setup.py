@@ -15,8 +15,10 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-# This setup.py now only covers how to compile the C extension modules. All
-# other information has been moved into pyprojects.toml.
+"""
+This setup.py now only covers how to compile the C extension modules. All
+other information has been moved into pyprojects.toml.
+"""
 
 import sys
 import os
@@ -39,7 +41,7 @@ except ImportError:
     # on ReadTheDocs or similar.
     withExtensions = False
 
-# For most up-to-date numpy deprecation warnings
+# Trigger the most up-to-date numpy compile-time deprecation warnings.
 # See https://numpy.org/doc/stable/reference/c-api/deprecations.html
 # for a not-very-clear explanation.
 # The messages are not visible during the install process (i.e. using pip),
