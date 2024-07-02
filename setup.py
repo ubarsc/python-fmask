@@ -17,7 +17,6 @@
 
 # This setup.py now only covers how to compile the C extension modules. All
 # other information has been moved into pyprojects.toml.
-#
 
 import sys
 import os
@@ -28,8 +27,6 @@ from setuptools import setup, Extension
 
 # So I can import fmask itself, which will allow access to fmask.__version__
 # to support the dynamic version attribute specified in pyproject.toml
-# Don't forget to close your left eye, and hold your tongue at an angle
-# of 45 degrees....
 sys.path.append(".")
 
 try:
@@ -42,30 +39,21 @@ except ImportError:
     # on ReadTheDocs or similar.
     withExtensions = False
 
-# This is numpy's mechanism for creating compile-time warnings for
-# deprecated API calls. I think it works something like this.
-# If the symbol NPY_NO_DEPRECATED_API is not defined at all, there will
-# be a warning about that. If it is defined, as a given numpy version, then
-# the include files for anything deprecated from the given version will be
-# excluded/altered at compile-time, and so if those calls are actually used,
-# that will trigger a warning message. So, the numpy version number used should
-# be as late as possible, in order to generate the most up-to-date compile-time
-# warnings. I am uncertain whether this actually works, because it seems we
-# are not using any deprecated calls. Let's hope this is true.
+# For most up-to-date numpy deprecation warnings
 # See https://numpy.org/doc/stable/reference/c-api/deprecations.html
 # for a not-very-clear explanation.
 # The messages are not visible during the install process (i.e. using pip),
-# but ARE visible during the build process, i.e. when using "python -m build"
-NUMPY_MACROS = ('NPY_NO_DEPRECATED_API', 'NPY_2_0_API_VERSION')
+# but ARE visible when building a wheel file (e.g. when using "python -m build")
+NUMPY_DEPR_WARN = ('NPY_NO_DEPRECATED_API', 'NPY_2_0_API_VERSION')
 
 if withExtensions:
     # This is for a normal build
     fillminimaC = Extension(name='fmask._fillminima',
-        define_macros=[NUMPY_MACROS],
+        define_macros=[NUMPY_DEPR_WARN],
         sources=['c_src/fillminima.c'],
         include_dirs=[numpy_get_include()])
     valueIndexesC = Extension(name='fmask._valueindexes',
-        define_macros=[NUMPY_MACROS],
+        define_macros=[NUMPY_DEPR_WARN],
         sources=['c_src/valueindexes.c'],
         include_dirs=[numpy_get_include()])
     extensionsList = [fillminimaC, valueIndexesC]
