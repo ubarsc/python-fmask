@@ -160,6 +160,8 @@ under the 'conda-forge' channel. Once you have installed
 `Conda <https://github.com/conda-forge/miniforge>`_, run the following commands on the
 command line to install python-fmask: ::
 
+    conda config --prepend channels conda-forge
+    conda config --set channel_priority strict
     conda create -n myenv python-fmask
     conda activate myenv
 
