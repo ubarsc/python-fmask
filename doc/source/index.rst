@@ -158,10 +158,17 @@ read the INSTALL.txt file included inside the source bundle.
 Pre-built binary `Conda <https://github.com/conda-forge/miniforge>`_ packages are available
 under the 'conda-forge' channel. Once you have installed
 `Conda <https://github.com/conda-forge/miniforge>`_, run the following commands on the
-command line to install python-fmask: ::
+command line to install python-fmask::
 
+    conda config --prepend channels conda-forge
+    conda config --set channel_priority strict
     conda create -n myenv python-fmask
     conda activate myenv
+
+For those using the `Spack package manager <https://spack.readthedocs.io/>`_,
+python-fmask is also available as::
+
+    spack install py-python-fmask
 
 Applications that use python-fmask
 ----------------------------------
