@@ -2,6 +2,9 @@
 WARNING: To install python-fmask it is strongly  recommended to use the conda forge
 pre-built binaries. Only install from source if you absolutely must.
 
+The code requires RIOS, GDAL, numpy and scipy. These must be installed, preferrably
+using a package manager such as conda.
+
 
 To install python-fmask from the source code bundle, use the following commands
 
