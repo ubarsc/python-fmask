@@ -182,24 +182,23 @@ static PQel *PQ_first(PixelQueue *pixQ, int h) {
     }
     return current;
 }
+
+static int di[4] = { 0, 0, -1, 1 };
+static int dj[4] = { -1, 1, 0, 0 };
     
 /* Return a list of neighbouring pixels to given pixel p.  */
 static PQel *neighbours(PQel *p, int nRows, int nCols) {
-    int ii, jj, i, j;
+    int n, i, j;
     PQel *pl, *pNew;
         
     pl = NULL;
-    for (ii=-1; ii<=1; ii++) {
-        for (jj=-1; jj<=1; jj++) {
-            if ((ii != 0) && (jj != 0)) {
-                i = p->i + ii;
-                j = p->j + jj;
-                if ((i >= 0) && (i < nRows) && (j >= 0) && (j < nCols)) {
-                    pNew = newPix(i, j);
-                    pNew->next = pl;
-                    pl = pNew;
-                }
-            }
+    for (n=0; n<4; n++) {
+        i = p->i + di[n];
+        j = p->j + dj[n];
+        if ((i >= 0) && (i < nRows) && (j >= 0) && (j < nCols)) {
+            pNew = newPix(i, j);
+            pNew->next = pl;
+            pl = pNew;
         }
     }
     return pl;
