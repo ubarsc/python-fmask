@@ -10,7 +10,7 @@
 #
 
 [build-system]
-requires = ["setuptools>=61.0", "wheel", "numpy"]
+requires = ["setuptools>=77.0.3", "wheel", "numpy"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -22,7 +22,7 @@ authors = [
 ]
 description = "Implement the Fmask cloud masking algorithm (Zhu, Wang & Woodcock 2015)"
 readme = "README.md"
-license = {file = "LICENSE.txt"}
+license = "GPL-3.0-or-later"
 
 [project.scripts]
 fmask_sentinel2makeAnglesImage = "fmask.cmdline.sentinel2makeAnglesImage:mainRoutine"
